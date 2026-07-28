@@ -41,6 +41,8 @@ export type MariwazeRoutes = {
     boat: string;
     boatSetup: string;
     security: string;
+    adminHome: string;
+    adminPricing: string;
 };
 
 export const appRoutes: MariwazeRoutes = {
@@ -53,6 +55,8 @@ export const appRoutes: MariwazeRoutes = {
     boat: '/bateau',
     boatSetup: '/bateau/configurer',
     security: '/securite',
+    adminHome: '/admin',
+    adminPricing: '/admin/tarifs',
 };
 
 export function mariwazeRoutesForPreview(_preview: boolean): MariwazeRoutes {

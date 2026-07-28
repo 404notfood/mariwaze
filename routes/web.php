@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\PricingController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\BoatController;
 use App\Http\Controllers\CruiseController;
 use App\Http\Controllers\Demo\DemoController;
@@ -32,3 +35,11 @@ Route::middleware($maritimeMiddleware)->group(function (): void {
 });
 
 require __DIR__.'/settings.php';
+
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function (): void {
+    Route::get('/', AdminDashboardController::class)->name('home');
+    Route::get('utilisateurs', [AdminUserController::class, 'index'])->name('users');
+    Route::put('utilisateurs/{user}/role', [AdminUserController::class, 'updateRole'])->name('users.role.update');
+    Route::get('tarifs', [PricingController::class, 'index'])->name('pricing');
+    Route::put('tarifs/{plan}', [PricingController::class, 'update'])->name('pricing.update');
+});

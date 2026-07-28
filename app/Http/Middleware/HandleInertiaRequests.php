@@ -40,8 +40,14 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+                'can_admin' => $this->canAdmin($request),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
+    }
+
+    private function canAdmin(Request $request): bool
+    {
+        return $request->user()?->isAdmin() ?? false;
     }
 }

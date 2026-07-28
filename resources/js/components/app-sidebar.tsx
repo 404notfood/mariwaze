@@ -1,5 +1,5 @@
-import { Link } from '@inertiajs/react';
-import { Anchor, Compass, LayoutGrid, Map, Shield, Ship } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { Anchor, Compass, LayoutGrid, Map, Settings2, Shield, Ship } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import ThemeToggle from '@/components/mariwaze/theme-toggle';
 import { NavFooter } from '@/components/nav-footer';
@@ -15,10 +15,15 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useMariwazeRoutes } from '@/hooks/use-mariwaze-routes';
-import type { NavItem } from '@/types';
+import type { Auth, NavItem } from '@/types';
+
+type PageProps = {
+    auth: Auth;
+};
 
 export function AppSidebar() {
     const routes = useMariwazeRoutes();
+    const { auth } = usePage<PageProps>().props;
 
     const mainNavItems: NavItem[] = [
         { title: 'Accueil', href: routes.dashboard, icon: LayoutGrid },
@@ -27,6 +32,16 @@ export function AppSidebar() {
         { title: 'Explorer', href: routes.explore, icon: Anchor, matchPrefix: true },
         { title: 'Mon bateau', href: routes.boat, icon: Ship, matchPrefix: true },
         { title: 'Sécurité', href: routes.security, icon: Shield },
+        ...(auth.can_admin
+            ? [
+                  {
+                      title: 'Admin',
+                      href: routes.adminHome,
+                      icon: Settings2,
+                      matchPrefix: true,
+                  },
+              ]
+            : []),
     ];
 
     const footerNavItems: NavItem[] = [
