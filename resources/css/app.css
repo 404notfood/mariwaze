@@ -1,0 +1,261 @@
+@import 'tailwindcss';
+
+@import 'tw-animate-css';
+
+@source '../views';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+    --font-sans:
+        'Manrope', ui-sans-serif, system-ui, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+        'Noto Color Emoji';
+
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+
+    --color-ocean-navy: #06283d;
+    --color-sea-blue: #1363df;
+    --color-lagoon: #47b5ff;
+    --color-sand: #e8d5b7;
+    --color-foam: #f7f7f7;
+    --color-safety-orange: #ff8c42;
+}
+
+:root {
+    --background: #f7f7f7;
+    --foreground: #06283d;
+    --card: #ffffff;
+    --card-foreground: #06283d;
+    --popover: #ffffff;
+    --popover-foreground: #06283d;
+    --primary: #1363df;
+    --primary-foreground: #ffffff;
+    --secondary: #e8d5b7;
+    --secondary-foreground: #06283d;
+    --muted: #eef4f8;
+    --muted-foreground: #4a6678;
+    --accent: #47b5ff;
+    --accent-foreground: #06283d;
+    --destructive: #ff8c42;
+    --destructive-foreground: #ffffff;
+    --border: #d4e4ef;
+    --input: #d4e4ef;
+    --ring: #47b5ff;
+    --chart-1: #1363df;
+    --chart-2: #47b5ff;
+    --chart-3: #e8d5b7;
+    --chart-4: #06283d;
+    --chart-5: #ff8c42;
+    --radius: 0.75rem;
+    --sidebar: #06283d;
+    --sidebar-foreground: #f7f7f7;
+    --sidebar-primary: #47b5ff;
+    --sidebar-primary-foreground: #06283d;
+    --sidebar-accent: #0a3550;
+    --sidebar-accent-foreground: #f7f7f7;
+    --sidebar-border: #0a3550;
+    --sidebar-ring: #47b5ff;
+
+    /* Carte marine — mode jour */
+    --chart-water-1: #b8dce8;
+    --chart-water-2: #8ecae6;
+    --chart-water-3: #6bb5d4;
+    --chart-land-1: #d4c4a0;
+    --chart-land-2: #b8a882;
+    --chart-coastline: #8b7355;
+    --chart-grid: rgba(6, 40, 61, 0.06);
+    --chart-depth: rgba(6, 40, 61, 0.2);
+    --chart-depth-label: rgba(6, 40, 61, 0.5);
+    --chart-current: #087e8b;
+    --chart-current-strong: #075a68;
+    --chart-current-label: rgba(6, 40, 61, 0.72);
+    --chart-route: #1363df;
+    --chart-route-glow: #47b5ff;
+    --chart-marker-port: #1363df;
+    --chart-marker-port-stroke: #ffffff;
+    --chart-marker-anchorage: #e8d5b7;
+    --chart-marker-anchorage-stroke: #06283d;
+    --chart-marker-waypoint: #47b5ff;
+    --chart-marker-waypoint-stroke: #06283d;
+    --chart-marker-danger: #ff8c42;
+    --chart-marker-danger-stroke: #ffffff;
+    --chart-danger-zone: #ff8c42;
+    --chart-label: #06283d;
+    --chart-compass-bg: #f7f7f7;
+    --chart-compass-north: #1363df;
+    --chart-highlight: #47b5ff;
+    --chart-legend-bg: rgba(255, 255, 255, 0.9);
+}
+
+.dark {
+    --background: #020f18;
+    --foreground: #e8f4fc;
+    --card: #06283d;
+    --card-foreground: #e8f4fc;
+    --popover: #06283d;
+    --popover-foreground: #e8f4fc;
+    --primary: #47b5ff;
+    --primary-foreground: #020f18;
+    --secondary: #0a3550;
+    --secondary-foreground: #e8f4fc;
+    --muted: #0a3550;
+    --muted-foreground: #7eb8d4;
+    --accent: #1363df;
+    --accent-foreground: #e8f4fc;
+    --destructive: #ff8c42;
+    --destructive-foreground: #020f18;
+    --border: #0d4a6e;
+    --input: #0d4a6e;
+    --ring: #47b5ff;
+    --chart-1: #47b5ff;
+    --chart-2: #1363df;
+    --chart-3: #c4a882;
+    --chart-4: #ff8c42;
+    --chart-5: #7eb8d4;
+    --sidebar: #010a10;
+    --sidebar-foreground: #e8f4fc;
+    --sidebar-primary: #47b5ff;
+    --sidebar-primary-foreground: #020f18;
+    --sidebar-accent: #06283d;
+    --sidebar-accent-foreground: #e8f4fc;
+    --sidebar-border: #06283d;
+    --sidebar-ring: #47b5ff;
+
+    /* Carte marine — mode nuit */
+    --chart-water-1: #041824;
+    --chart-water-2: #06283d;
+    --chart-water-3: #0a3550;
+    --chart-land-1: #3d5a45;
+    --chart-land-2: #2a4030;
+    --chart-coastline: #c4a882;
+    --chart-grid: rgba(71, 181, 255, 0.08);
+    --chart-depth: rgba(71, 181, 255, 0.25);
+    --chart-depth-label: rgba(126, 184, 212, 0.7);
+    --chart-current: #65dce8;
+    --chart-current-strong: #9af0ef;
+    --chart-current-label: rgba(211, 249, 255, 0.85);
+    --chart-route: #47b5ff;
+    --chart-route-glow: #1363df;
+    --chart-marker-port: #47b5ff;
+    --chart-marker-port-stroke: #e8f4fc;
+    --chart-marker-anchorage: #c4a882;
+    --chart-marker-anchorage-stroke: #e8f4fc;
+    --chart-marker-waypoint: #7eb8d4;
+    --chart-marker-waypoint-stroke: #e8f4fc;
+    --chart-marker-danger: #ff8c42;
+    --chart-marker-danger-stroke: #ff8c42;
+    --chart-danger-zone: #ff8c42;
+    --chart-label: #e8f4fc;
+    --chart-compass-bg: #06283d;
+    --chart-compass-north: #47b5ff;
+    --chart-highlight: #47b5ff;
+    --chart-legend-bg: rgba(6, 40, 61, 0.85);
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
+}
+
+@layer utilities {
+    .mariwaze-gradient-ocean {
+        background: linear-gradient(
+            135deg,
+            #06283d 0%,
+            #1363df 50%,
+            #47b5ff 100%
+        );
+    }
+
+    .mariwaze-gradient-sand {
+        background: linear-gradient(
+            180deg,
+            #f7f7f7 0%,
+            #e8d5b7 100%
+        );
+    }
+
+    .mariwaze-pattern-map {
+        background-image: radial-gradient(
+                circle at 20% 30%,
+                rgba(71, 181, 255, 0.15) 0%,
+                transparent 50%
+            ),
+            radial-gradient(
+                circle at 80% 70%,
+                rgba(19, 99, 223, 0.1) 0%,
+                transparent 40%
+            );
+    }
+
+    .dark .mariwaze-gradient-ocean {
+        background: linear-gradient(
+            135deg,
+            #010a10 0%,
+            #06283d 40%,
+            #0a3550 100%
+        );
+    }
+
+    .nautical-chart {
+        box-shadow: inset 0 0 60px rgba(6, 40, 61, 0.15);
+    }
+
+    .dark .nautical-chart {
+        box-shadow:
+            inset 0 0 80px rgba(0, 0, 0, 0.4),
+            0 0 30px rgba(71, 181, 255, 0.05);
+    }
+}

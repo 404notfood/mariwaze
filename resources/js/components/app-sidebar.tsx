@@ -1,0 +1,63 @@
+import { Link } from '@inertiajs/react';
+import { Anchor, Compass, LayoutGrid, Map, Shield, Ship } from 'lucide-react';
+import AppLogo from '@/components/app-logo';
+import ThemeToggle from '@/components/mariwaze/theme-toggle';
+import { NavFooter } from '@/components/nav-footer';
+import { NavMain } from '@/components/nav-main';
+import { NavUser } from '@/components/nav-user';
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+} from '@/components/ui/sidebar';
+import { useMariwazeRoutes } from '@/hooks/use-mariwaze-routes';
+import type { NavItem } from '@/types';
+
+export function AppSidebar() {
+    const routes = useMariwazeRoutes();
+
+    const mainNavItems: NavItem[] = [
+        { title: 'Accueil', href: routes.dashboard, icon: LayoutGrid },
+        { title: 'Mes croisières', href: routes.cruises, icon: Map, matchPrefix: true },
+        { title: 'Carte marine', href: routes.map, icon: Compass },
+        { title: 'Explorer', href: routes.explore, icon: Anchor, matchPrefix: true },
+        { title: 'Mon bateau', href: routes.boat, icon: Ship, matchPrefix: true },
+        { title: 'Sécurité', href: routes.security, icon: Shield },
+    ];
+
+    const footerNavItems: NavItem[] = [
+        { title: 'Configurer bateau', href: routes.boatSetup, icon: Ship },
+    ];
+
+    return (
+        <Sidebar collapsible="icon" variant="inset">
+            <SidebarHeader>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton size="lg" asChild>
+                            <Link href={routes.dashboard} prefetch>
+                                <AppLogo />
+                            </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarHeader>
+
+            <SidebarContent>
+                <NavMain items={mainNavItems} />
+            </SidebarContent>
+
+            <SidebarFooter>
+                <div className="flex items-center justify-between px-2 pb-2">
+                    <ThemeToggle />
+                </div>
+                <NavFooter items={footerNavItems} className="mt-auto" />
+                <NavUser />
+            </SidebarFooter>
+        </Sidebar>
+    );
+}
