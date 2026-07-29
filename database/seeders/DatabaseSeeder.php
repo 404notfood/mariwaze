@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             BillingCatalogSeeder::class,
             ChecklistTemplateSeeder::class,
+            MaritimeSafetySeeder::class,
         ]);
     }
 }

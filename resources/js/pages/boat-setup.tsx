@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { mariwazeRoutesForPreview } from '@/lib/mariwaze-routes';
+import { appRoutes } from '@/lib/mariwaze-routes';
 import { useMariwazeRoutes } from '@/hooks/use-mariwaze-routes';
 
 type BoatType = { id: string; label: string; description: string };
@@ -22,10 +22,10 @@ type BoatForm = {
     length: number; width: number; draft: number; mast_height: number;
     avg_speed: number; fuel_range: number;
 };
-type Props = { boat: Boat; catalog: CatalogBoat[]; preview?: boolean };
+type Props = { boat: Boat; catalog: CatalogBoat[] };
 
-export default function DemoBoatSetup({ boat, catalog, preview = false }: Props) {
-    const routes = useMariwazeRoutes(preview);
+export default function DemoBoatSetup({ boat, catalog }: Props) {
+    const routes = useMariwazeRoutes();
     const { data, setData, post, processing, errors } = useForm<BoatForm>({
         name: boat.name,
         model: boat.model,
@@ -135,4 +135,4 @@ function NumberField({ label, value, onChange, error, step = '0.1' }: { label: s
     return <Field label={label} error={error}><Input type="number" min="0" step={step} value={value} onChange={(event) => onChange(Number(event.target.value))} /></Field>;
 }
 
-DemoBoatSetup.layout = () => ({ breadcrumbs: [{ title: 'Mon bateau', href: mariwazeRoutesForPreview(false).boat }, { title: 'Configurer', href: '/bateau/configurer' }] });
+DemoBoatSetup.layout = () => ({ breadcrumbs: [{ title: 'Mon bateau', href: appRoutes.boat }, { title: 'Configurer', href: '/bateau/configurer' }] });

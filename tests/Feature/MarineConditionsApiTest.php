@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -58,7 +59,7 @@ class MarineConditionsApiTest extends TestCase
     public function test_it_returns_a_service_unavailable_response_when_the_provider_cannot_be_reached(): void
     {
         Cache::flush();
-        Http::fake(fn () => throw new \Illuminate\Http\Client\ConnectionException('Network unavailable'));
+        Http::fake(fn () => throw new ConnectionException('Network unavailable'));
 
         $this->getJson('/api/marine/conditions?latitude=43.4&longitude=-1.6')
             ->assertStatus(503)

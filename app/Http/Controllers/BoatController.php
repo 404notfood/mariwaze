@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Boat;
 use App\Services\Accounts\AccountContext;
+use App\Services\Safety\SafetyAuditor;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -11,13 +12,16 @@ use Inertia\Response;
 
 class BoatController extends Controller
 {
-    public function __construct(private readonly AccountContext $accounts) {}
+    public function __construct(
+        private readonly AccountContext $accounts,
+        private readonly SafetyAuditor $auditor,
+    ) {}
 
     public function show(Request $request): Response
     {
         $organization = $this->accounts->currentOrDemo($request->user());
 
-        return Inertia::render('demo/boat-show', [
+        return Inertia::render('boat-show', [
             'boat' => $this->payload($this->boat($organization->id)),
             'fleet' => Boat::query()
                 ->where('organization_id', $organization->id)
@@ -32,7 +36,7 @@ class BoatController extends Controller
     {
         $organization = $this->accounts->currentOrDemo($request->user());
 
-        return Inertia::render('demo/boat-setup', [
+        return Inertia::render('boat-setup', [
             'boat' => $this->payload($this->boat($organization->id)),
             'catalog' => $this->catalog(),
         ]);
@@ -81,7 +85,7 @@ class BoatController extends Controller
     /** @return array<string, mixed> */
     private function validatedBoat(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'model' => ['nullable', 'string', 'max:120'],
             'boat_type' => ['required', 'in:voilier,catamaran,moteur,deriveur'],
@@ -96,7 +100,21 @@ class BoatController extends Controller
             'fleet_status' => ['nullable', 'in:available,maintenance,booked,inactive'],
             'berths' => ['nullable', 'integer', 'between:0,80'],
             'fuel_consumption_per_hour' => ['nullable', 'numeric', 'between:0,500'],
+            'equipment' => ['nullable', 'array'],
+            'equipment.*' => ['boolean'],
         ]);
+
+        // Seuls les équipements connus sont conservés, sous forme de booléens.
+        if (array_key_exists('equipment', $data)) {
+            $data['equipment_json'] = collect($data['equipment'] ?? [])
+                ->only(array_keys(Boat::EQUIPMENT))
+                ->map(fn ($value): bool => (bool) $value)
+                ->all();
+        }
+
+        unset($data['equipment']);
+
+        return $data;
     }
 
     /** @return array<int, array<string, int|float|string>> */
@@ -124,18 +142,16 @@ class BoatController extends Controller
             'length' => 10, 'width' => 3.2, 'draft' => 1.8, 'mast_height' => 15, 'avg_speed' => 6, 'fuel_range' => 120,
         ];
         $type = (string) $data['boat_type'];
+        $audit = $this->auditor->audit($boat);
 
         return [
             ...$data,
             'type' => $type,
             'type_label' => collect($types)->firstWhere('id', $type)['label'],
-            'readiness' => $boat === null ? 0 : 70,
-            'readiness_label' => $boat === null ? 'Profil à compléter' : 'Profil de navigation renseigné',
+            'readiness' => $audit['readiness'],
+            'readiness_label' => $audit['readiness_label'],
             'types' => $types,
-            'equipment' => [
-                ['label' => 'VHF', 'present' => false], ['label' => 'AIS', 'present' => false], ['label' => 'Balise EPIRB', 'present' => false],
-                ['label' => 'Radeau de survie', 'present' => false], ['label' => 'Radar', 'present' => false], ['label' => 'Pilote automatique', 'present' => false],
-            ],
+            'equipment' => ($boat ?? new Boat)->equipment(),
         ];
     }
 

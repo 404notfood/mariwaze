@@ -24,7 +24,7 @@ class SeaRouteService
             $process->setTimeout(30);
             $process->run();
 
-            if (!$process->isSuccessful()) {
+            if (! $process->isSuccessful()) {
                 throw new RuntimeException('Le moteur de route maritime est indisponible: '.$process->getErrorOutput());
             }
 

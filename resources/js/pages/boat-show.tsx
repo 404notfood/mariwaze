@@ -8,12 +8,11 @@ import {
     Ship,
     XCircle,
 } from 'lucide-react';
-import PreviewBanner from '@/components/mariwaze/preview-banner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { mariwazeRoutesForPreview } from '@/lib/mariwaze-routes';
+import { appRoutes } from '@/lib/mariwaze-routes';
 import { useMariwazeRoutes } from '@/hooks/use-mariwaze-routes';
 
 type Boat = {
@@ -35,11 +34,11 @@ type Boat = {
 
 type Props = {
     boat: Boat;
-    preview?: boolean;
+
 };
 
-export default function DemoBoatShow({ boat, preview = false }: Props) {
-    const routes = useMariwazeRoutes(preview);
+export default function DemoBoatShow({ boat }: Props) {
+    const routes = useMariwazeRoutes();
 
     const equipmentPresent = boat.equipment.filter((e) => e.present).length;
 
@@ -47,7 +46,6 @@ export default function DemoBoatShow({ boat, preview = false }: Props) {
         <>
             <Head title={`Bateau — ${boat.name}`} />
             <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-                <PreviewBanner preview={preview} />
 
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div className="flex items-start gap-4">
@@ -200,5 +198,5 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 DemoBoatShow.layout = (props: Props) => ({
-    breadcrumbs: [{ title: 'Mon bateau', href: mariwazeRoutesForPreview(!!props.preview).boat }],
+    breadcrumbs: [{ title: 'Mon bateau', href: appRoutes.boat }],
 });

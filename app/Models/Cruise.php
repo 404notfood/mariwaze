@@ -5,7 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property-read Carbon|null $departure_date
+ */
 class Cruise extends Model
 {
     use HasFactory;
@@ -46,5 +52,17 @@ class Cruise extends Model
     public function boat(): BelongsTo
     {
         return $this->belongsTo(Boat::class);
+    }
+
+    /** @return HasMany<CruiseRoute, $this> */
+    public function routes(): HasMany
+    {
+        return $this->hasMany(CruiseRoute::class);
+    }
+
+    /** @return HasOne<CruiseRoute, $this> */
+    public function selectedRoute(): HasOne
+    {
+        return $this->hasOne(CruiseRoute::class)->where('is_selected', true);
     }
 }

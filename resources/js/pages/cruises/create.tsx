@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { mariwazeRoutesForPreview } from '@/lib/mariwaze-routes';
+import { appRoutes } from '@/lib/mariwaze-routes';
 
 type CruiseForm = {
     title: string; departure_port: string; destination_port: string; departure_date: string;
@@ -81,4 +81,4 @@ export default function CreateCruise({ cruise, prefill }: { cruise?: ExistingCru
 
 function Field({ label, error, className, children }: { label: string; error?: string; className?: string; children: React.ReactNode }) { return <div className={className}><Label className="mb-2 block">{label}</Label>{children}{error && <p className="mt-1 text-xs text-destructive">{error}</p>}</div>; }
 
-CreateCruise.layout = () => ({ breadcrumbs: [{ title: 'Mes croisières', href: mariwazeRoutesForPreview(false).cruises }, { title: 'Nouvelle croisière', href: '/croisieres/nouvelle' }] });
+CreateCruise.layout = () => ({ breadcrumbs: [{ title: 'Mes croisières', href: appRoutes.cruises }, { title: 'Nouvelle croisière', href: '/croisieres/nouvelle' }] });

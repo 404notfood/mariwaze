@@ -5,7 +5,7 @@ import PlannerMap, { type NavigationPoint } from '@/components/mariwaze/planner-
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { mariwazeRoutesForPreview } from '@/lib/mariwaze-routes';
+import { appRoutes } from '@/lib/mariwaze-routes';
 
 type Route = { slug: string; title: string; points: NavigationPoint[]; geometry?: Array<Pick<NavigationPoint, 'latitude' | 'longitude'>>; available?: boolean } | null;
 type MarineConditions = {
@@ -67,4 +67,4 @@ function ConditionCard({ icon: Icon, label, speed, direction, suffix, detail }: 
     return <div className="flex items-center gap-4 border-l-2 border-sea-blue/40 pl-4"><div className="flex size-11 items-center justify-center rounded-full bg-sea-blue/10 text-sea-blue"><Icon className="size-5" style={{ transform: `rotate(${direction ?? 0}deg)` }} /></div><div><p className="text-xs text-muted-foreground">{label}</p><p className="mt-1 text-lg font-bold">{unavailable ? 'Indisponible' : `${speed.toFixed(1)} ${suffix} · ${Math.round(direction)}°`}</p>{detail && <p className="text-xs text-muted-foreground">{detail}</p>}</div></div>;
 }
 
-DemoMap.layout = () => ({ breadcrumbs: [{ title: 'Carte marine', href: mariwazeRoutesForPreview(false).map }] });
+DemoMap.layout = () => ({ breadcrumbs: [{ title: 'Carte marine', href: appRoutes.map }] });

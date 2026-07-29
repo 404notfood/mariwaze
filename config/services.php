@@ -45,6 +45,18 @@ return [
         'python' => env('SEAROUTE_PYTHON', 'C:\\Users\\lprad\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe'),
     ],
 
+    'overpass' => [
+        'url' => env('OVERPASS_URL', 'https://overpass-api.de/api/interpreter'),
+        'user_agent' => env('OVERPASS_USER_AGENT', 'MariWaze/1.0 (contact@mariwaze.test)'),
+        'timeout' => (int) env('OVERPASS_TIMEOUT', 180),
+    ],
+
+    'worldtides' => [
+        'url' => env('WORLDTIDES_URL', 'https://www.worldtides.info/api/v3'),
+        'key' => env('WORLDTIDES_API_KEY'),
+        'timeout' => (int) env('WORLDTIDES_TIMEOUT', 8),
+    ],
+
     'geocoding' => [
         'mapbox_url' => env('MAPBOX_GEOCODING_URL', 'https://api.mapbox.com/search/geocode/v6/forward'),
         'mapbox_token' => env('MAPBOX_ACCESS_TOKEN'),

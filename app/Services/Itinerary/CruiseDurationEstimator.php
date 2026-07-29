@@ -12,26 +12,12 @@ class CruiseDurationEstimator
         private readonly SeaRouteService $router,
     ) {}
 
+    /**
+     * Durée conseillée, calculée sur la distance maritime réelle et le rythme
+     * quotidien associé au style de navigation.
+     */
     public function estimate(string $departure, string $destination, string $style): int
     {
-        if ($this->normalize($departure) === 'saint-malo' && $this->normalize($destination) === 'vannes') {
-            return match ($style) {
-                'Rapide' => 11,
-                'Découverte' => 18,
-                'Famille' => 19,
-                default => 15,
-            };
-        }
-
-        if ($this->normalize($departure) === 'saint-malo' && $this->normalize($destination) === 'quebec') {
-            return match ($style) {
-                'Rapide' => 24,
-                'Découverte' => 33,
-                'Famille' => 36,
-                default => 28,
-            };
-        }
-
         $start = $this->ports->find($departure);
         $end = $this->ports->find($destination);
 

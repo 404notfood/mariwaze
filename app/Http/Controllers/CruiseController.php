@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cruise;
+use App\Models\CruiseRoute;
+use App\Models\RouteSegment;
 use App\Services\Accounts\AccountContext;
 use App\Services\Checklists\CruiseChecklistBuilder;
 use App\Services\Itinerary\CruiseDurationEstimator;
-use App\Services\Itinerary\DraftItineraryPlanner;
-use App\Services\Navigation\PortCoordinates;
-use App\Services\Navigation\SeaRouteService;
+use App\Services\Routing\RouteGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -20,22 +20,27 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 class CruiseController extends Controller
 {
     public function __construct(
-        private readonly DraftItineraryPlanner $planner,
-        private readonly PortCoordinates $coordinates,
-        private readonly SeaRouteService $router,
         private readonly AccountContext $accounts,
         private readonly CruiseChecklistBuilder $checklists,
+        private readonly RouteGenerator $routes,
+        private readonly CruiseDurationEstimator $durations,
     ) {}
 
     public function index(Request $request): Response
     {
         $organization = $this->accounts->currentOrDemo($request->user());
 
-        return Inertia::render('demo/cruises', [
-            'cruises' => Cruise::query()->where('organization_id', $organization->id)->latest()->get()->map(fn (Cruise $cruise) => [
-                ...$this->summary($this->fromModel($cruise)),
-                'deletable' => true,
-            ])->all(),
+        return Inertia::render('cruises/index', [
+            'cruises' => Cruise::query()
+                ->with('routes')
+                ->where('organization_id', $organization->id)
+                ->latest()
+                ->get()
+                ->map(fn (Cruise $cruise): array => [
+                    ...$this->summary($this->fromModel($cruise)),
+                    'deletable' => true,
+                ])
+                ->all(),
         ]);
     }
 
@@ -112,28 +117,92 @@ class CruiseController extends Controller
     private function duration(array $data): int
     {
         if (! $data['auto_duration']) {
-            return $data['duration_days'];
+            return (int) $data['duration_days'];
         }
 
-        $cruise = new Cruise($data);
-        $recommendedDays = $this->planner->plan($cruise)['scenarios'][0]['days'] ?? null;
-
-        return is_int($recommendedDays)
-            ? $recommendedDays
-            : app(CruiseDurationEstimator::class)->estimate($data['departure_port'], $data['destination_port'], $data['navigation_style']);
+        return $this->durations->estimate(
+            $data['departure_port'],
+            $data['destination_port'],
+            $data['navigation_style'],
+        );
     }
 
     public function show(string $slug): Response
     {
-        $model = Cruise::query()->where('slug', $slug)->first();
+        $model = Cruise::query()
+            ->with(['boat', 'routes.segments.port', 'routes.segments.anchorage'])
+            ->where('slug', $slug)
+            ->first();
 
         if ($model === null) {
             throw new NotFoundHttpException;
         }
 
-        $cruise = $this->fromModel($model);
+        return Inertia::render('cruises/show', [
+            'cruise' => $this->fromModel($model),
+            'scenarios' => $model->routes->map(fn (CruiseRoute $route): array => $this->routePayload($route))->all(),
+        ]);
+    }
 
-        return Inertia::render('demo/cruise-show', ['cruise' => $cruise]);
+    /**
+     * Calcule (ou recalcule) les routes candidates de la croisière.
+     */
+    public function generateRoutes(string $slug): RedirectResponse
+    {
+        $cruise = Cruise::query()->with('boat')->where('slug', $slug)->firstOrFail();
+
+        $routes = $this->routes->generate($cruise);
+
+        if ($routes === []) {
+            return back()->with('error', "L'itinéraire n'a pas pu être calculé : vérifiez que les deux ports sont localisables par mer.");
+        }
+
+        return back()->with('success', count($routes).' itinéraires calculés.');
+    }
+
+    /**
+     * Retient l'un des scénarios proposés.
+     */
+    public function selectRoute(string $slug, string $scenario): RedirectResponse
+    {
+        $cruise = Cruise::query()->where('slug', $slug)->firstOrFail();
+
+        $route = $cruise->routes()->where('scenario', $scenario)->firstOrFail();
+
+        $cruise->routes()->update(['is_selected' => false]);
+        $route->update(['is_selected' => true]);
+
+        return back()->with('success', 'Itinéraire « '.$route->label.' » retenu.');
+    }
+
+    /** @return array<string, mixed> */
+    private function routePayload(CruiseRoute $route): array
+    {
+        return [
+            'scenario' => $route->scenario,
+            'label' => $route->label,
+            'selected' => $route->is_selected,
+            'score' => $route->score,
+            'score_breakdown' => $route->score_breakdown,
+            'distance_nm' => $route->distance_nm,
+            'duration_days' => $route->duration_days,
+            'stops' => $route->stops,
+            'geometry' => $route->geometry ?? [],
+            'computed_at' => $route->computed_at?->toIso8601String(),
+            'legs' => $route->segments->map(fn (RouteSegment $segment): array => [
+                'day' => $segment->day,
+                'label' => 'J'.$segment->day,
+                'from' => $segment->from_name,
+                'to' => $segment->to_name,
+                'distance_nm' => $segment->distance_nm,
+                'duration_hours' => $segment->duration_hours,
+                'overnight' => $segment->overnight,
+                'weather' => $segment->weather_snapshot,
+                'note' => $segment->note,
+                'anchorage_slug' => $segment->anchorage?->slug,
+                'port_slug' => $segment->port?->slug,
+            ])->all(),
+        ];
     }
 
     public function destroy(string $slug): RedirectResponse
@@ -159,13 +228,13 @@ class CruiseController extends Controller
     /** @return array<string, mixed> */
     private function fromModel(Cruise $cruise): array
     {
-        $plan = $this->planner->plan($cruise);
-        $legs = is_array($plan['legs'] ?? null) ? $plan['legs'] : [];
-        $routeGeometry = $plan['route_geometry'] ?? $this->routeGeometry([
-            $cruise->departure_port,
-            ...collect($legs)->pluck('to')->all(),
-        ]);
         $departureDate = $this->departureDate($cruise);
+        $selected = $cruise->routes->firstWhere('is_selected', true) ?? $cruise->routes->first();
+        $recommendedDays = $this->durations->estimate(
+            $cruise->departure_port,
+            $cruise->destination_port,
+            $cruise->navigation_style,
+        );
 
         return [
             'slug' => $cruise->slug,
@@ -181,51 +250,19 @@ class CruiseController extends Controller
             'crew' => $cruise->crew_count,
             'navigation_area' => $cruise->navigation_area,
             'boat' => $cruise->boat?->only(['id', 'name', 'model', 'boat_type', 'avg_speed', 'fuel_range']),
-            'experience' => 'À préciser',
-            'progress' => 8,
-            ...$plan,
-            'route_available' => ($plan['route_available'] ?? true) && count($routeGeometry) > 1,
-            'route_geometry' => $routeGeometry,
+            'miles' => $selected?->distance_nm ?? 0,
+            'stops' => $selected?->stops ?? 0,
+            'score' => $selected?->score,
+            'route_available' => $selected !== null && count($selected->geometry ?? []) > 1,
+            'route_geometry' => $selected?->geometry ?? [],
+            'duration_warning' => $cruise->duration_days < $recommendedDays
+                ? "Le style {$cruise->navigation_style} demande au moins {$recommendedDays} jours pour cette distance."
+                : null,
         ];
     }
 
     private function departureDate(Cruise $cruise): Carbon
     {
         return Carbon::parse($cruise->departure_date);
-    }
-
-    /** @param array<int, string> $names
-     * @return array<int, array{latitude: float, longitude: float}>
-     */
-    private function routeGeometry(array $names): array
-    {
-        $points = collect($names)->map(fn (string $name) => $this->coordinates->find($name))->filter()->values()->all();
-
-        if (count($points) < 2) {
-            return [];
-        }
-
-        $geometry = [];
-        foreach (array_chunk($points, 2, true) as $segment) {
-            $segment = array_values($segment);
-            if (count($segment) !== 2) {
-                continue;
-            }
-
-            try {
-                $line = $this->router->route($segment[0], $segment[1]);
-                if (count($line) < 2) {
-                    return [];
-                }
-                if ($geometry !== []) {
-                    array_shift($line);
-                }
-                array_push($geometry, ...$line);
-            } catch (\RuntimeException) {
-                return [];
-            }
-        }
-
-        return $geometry;
     }
 }

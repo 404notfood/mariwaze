@@ -36,6 +36,7 @@ export type MariwazeRoutes = {
     cruises: string;
     cruise: (slug: string) => string;
     anchorage: (slug: string) => string;
+    port: (slug: string) => string;
     explore: string;
     map: string;
     boat: string;
@@ -50,6 +51,7 @@ export const appRoutes: MariwazeRoutes = {
     cruises: '/croisieres',
     cruise: (slug: string) => `/croisieres/${slug}`,
     anchorage: (slug: string) => `/mouillages/${slug}`,
+    port: (slug: string) => `/ports/${slug}`,
     explore: '/explorer',
     map: '/carte',
     boat: '/bateau',
@@ -58,11 +60,3 @@ export const appRoutes: MariwazeRoutes = {
     adminHome: '/admin',
     adminPricing: '/admin/tarifs',
 };
-
-export function mariwazeRoutesForPreview(_preview: boolean): MariwazeRoutes {
-    return appRoutes;
-}
-
-export function mariwazeRoutesFromPath(pathname: string): MariwazeRoutes {
-    return appRoutes;
-}

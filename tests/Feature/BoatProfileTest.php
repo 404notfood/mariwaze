@@ -33,7 +33,7 @@ class BoatProfileTest extends TestCase
         ]);
 
         $this->get('/bateau')->assertInertia(fn (Assert $page) => $page
-            ->component('demo/boat-show')
+            ->component('boat-show')
             ->where('boat.name', 'Éole')
             ->where('boat.draft', 1.95)
             ->where('boat.mast_height', 17.7)

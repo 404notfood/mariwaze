@@ -1,6 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowRight, Calendar, MapPin, Ship, Trash2 } from 'lucide-react';
-import PreviewBanner from '@/components/mariwaze/preview-banner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +13,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import { mariwazeRoutesForPreview } from '@/lib/mariwaze-routes';
+import { appRoutes } from '@/lib/mariwaze-routes';
 import { useMariwazeRoutes } from '@/hooks/use-mariwaze-routes';
 
 type Cruise = {
@@ -34,18 +33,15 @@ type Cruise = {
 
 type Props = {
     cruises: Cruise[];
-    preview?: boolean;
 };
 
-export default function DemoCruises({ cruises, preview = false }: Props) {
-    const routes = useMariwazeRoutes(preview);
+export default function CruisesIndex({ cruises }: Props) {
+    const routes = useMariwazeRoutes();
 
     return (
         <>
             <Head title="Mes croisières" />
             <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-                <PreviewBanner preview={preview} />
-
                 <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                     <div>
                         <h1 className="text-2xl font-bold text-foreground md:text-3xl">
@@ -169,6 +165,6 @@ function Meta({
     );
 }
 
-DemoCruises.layout = (props: Props) => ({
-    breadcrumbs: [{ title: 'Mes croisières', href: mariwazeRoutesForPreview(!!props.preview).cruises }],
+CruisesIndex.layout = () => ({
+    breadcrumbs: [{ title: 'Mes croisières', href: appRoutes.cruises }],
 });
