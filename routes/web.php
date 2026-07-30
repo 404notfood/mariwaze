@@ -39,6 +39,7 @@ Route::middleware($maritimeMiddleware)->group(function (): void {
     Route::get('bateau', [BoatController::class, 'show'])->name('boat');
     Route::get('bateau/configurer', [BoatController::class, 'setup'])->name('boat.setup');
     Route::post('bateau', [BoatController::class, 'store'])->name('boat.store');
+    Route::patch('bateau/equipements', [BoatController::class, 'updateEquipment'])->name('boat.equipment.update');
     Route::post('bateaux', [BoatController::class, 'storeInFleet'])->name('boats.store');
 });
 

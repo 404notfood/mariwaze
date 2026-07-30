@@ -1,19 +1,19 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import {
     Anchor,
     CheckCircle2,
+    Circle,
     Gauge,
     Pencil,
     Ruler,
     Ship,
-    XCircle,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-import { appRoutes } from '@/lib/mariwaze-routes';
 import { useMariwazeRoutes } from '@/hooks/use-mariwaze-routes';
+import { appRoutes } from '@/lib/mariwaze-routes';
+import { cn } from '@/lib/utils';
 
 type Boat = {
     name: string;
@@ -29,7 +29,7 @@ type Boat = {
     fuel_range: number;
     readiness: number;
     readiness_label: string;
-    equipment: { label: string; present: boolean }[];
+    equipment: { key: string; label: string; present: boolean }[];
 };
 
 type Props = {
@@ -39,8 +39,18 @@ type Props = {
 
 export default function DemoBoatShow({ boat }: Props) {
     const routes = useMariwazeRoutes();
+    const [pending, setPending] = useState<string | null>(null);
 
     const equipmentPresent = boat.equipment.filter((e) => e.present).length;
+
+    const toggleEquipment = (key: string, present: boolean) => {
+        setPending(key);
+        router.patch(
+            '/bateau/equipements',
+            { equipment: { [key]: !present } },
+            { preserveScroll: true, onFinish: () => setPending(null) },
+        );
+    };
 
     return (
         <>
@@ -124,25 +134,34 @@ export default function DemoBoatShow({ boat }: Props) {
                             <CardTitle className="text-base">
                                 Équipements sécurité ({equipmentPresent}/{boat.equipment.length})
                             </CardTitle>
+                            <p className="text-xs text-muted-foreground">
+                                Cochez ce qui est à bord : l&apos;audit sécurité se met à jour aussitôt.
+                            </p>
                         </CardHeader>
                         <CardContent className="grid gap-2 sm:grid-cols-2">
                             {boat.equipment.map((item) => (
-                                <div
-                                    key={item.label}
+                                <button
+                                    key={item.key}
+                                    type="button"
+                                    onClick={() => toggleEquipment(item.key, item.present)}
+                                    disabled={pending !== null}
+                                    aria-pressed={item.present}
                                     className={cn(
-                                        'flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm',
+                                        'flex items-center gap-2 rounded-lg border border-transparent px-2 py-1.5 text-left text-sm transition',
+                                        'hover:border-border focus-visible:outline-2 focus-visible:outline-sea-blue',
                                         !item.present && 'bg-safety-orange/10',
+                                        pending === item.key && 'opacity-50',
                                     )}
                                 >
                                     {item.present ? (
-                                        <CheckCircle2 className="size-4 text-green-600" />
+                                        <CheckCircle2 className="size-4 shrink-0 text-green-600" />
                                     ) : (
-                                        <XCircle className="size-4 text-safety-orange" />
+                                        <Circle className="size-4 shrink-0 text-safety-orange" />
                                     )}
                                     <span className={!item.present ? 'font-medium' : 'text-muted-foreground'}>
                                         {item.label}
                                     </span>
-                                </div>
+                                </button>
                             ))}
                         </CardContent>
                     </Card>
@@ -197,6 +216,6 @@ function Row({ label, value }: { label: string; value: string }) {
     );
 }
 
-DemoBoatShow.layout = (props: Props) => ({
+DemoBoatShow.layout = () => ({
     breadcrumbs: [{ title: 'Mon bateau', href: appRoutes.boat }],
 });

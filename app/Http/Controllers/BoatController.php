@@ -74,6 +74,36 @@ class BoatController extends Controller
         return to_route('boat');
     }
 
+    /**
+     * Coche ou décoche un équipement de sécurité depuis la checklist du bateau.
+     */
+    public function updateEquipment(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'equipment' => ['required', 'array'],
+            'equipment.*' => ['boolean'],
+        ]);
+
+        $organization = $this->accounts->currentOrDemo($request->user());
+        $boat = $this->boat($organization->id);
+
+        if ($boat === null) {
+            return to_route('boat.setup');
+        }
+
+        $boat->update([
+            'equipment_json' => [
+                ...($boat->equipment_json ?? []),
+                ...collect($data['equipment'])
+                    ->only(array_keys(Boat::EQUIPMENT))
+                    ->map(fn ($value): bool => (bool) $value)
+                    ->all(),
+            ],
+        ]);
+
+        return back();
+    }
+
     private function boat(int $organizationId): ?Boat
     {
         return Boat::query()

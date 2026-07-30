@@ -5,6 +5,7 @@ namespace App\Services\Safety;
 use App\Models\Boat;
 use App\Models\CountryRegulation;
 use App\Models\Cruise;
+use App\Models\CruiseRoute;
 use App\Models\EmergencyContact;
 use App\Models\Port;
 
@@ -17,6 +18,11 @@ use App\Models\Port;
  */
 class SafetyAuditor
 {
+    public function __construct(
+        private readonly RouteHazardService $hazards,
+        private readonly CoastalCountryResolver $coasts,
+    ) {}
+
     /**
      * Équipements requis selon la zone de navigation (division 240 française).
      *
@@ -62,6 +68,8 @@ class SafetyAuditor
         }
 
         $readiness = (int) round(100 * $present / count($required));
+        $route = $this->selectedRoute($cruise);
+        $codes = $this->countryCodes($cruise, $route);
 
         return [
             'boat' => $boat === null ? null : [
@@ -77,8 +85,14 @@ class SafetyAuditor
             'readiness_label' => $this->readinessLabel($readiness, $area),
             'missing' => collect($checklist)->where('required', true)->where('done', false)->pluck('label')->values()->all(),
             'checklist' => $checklist,
-            'countries' => $this->countries($cruise),
-            'emergency' => $this->emergencyContacts($cruise),
+            'countries' => $this->countries($codes),
+            'emergency' => $this->emergencyContacts($codes),
+            'hazards' => $route === null || $cruise === null ? [] : $this->hazards->alertsForGeometry(
+                $route->geometry ?? [],
+                $cruise->departure_date,
+                (int) $cruise->duration_days,
+            ),
+            'route_available' => $route !== null && count($route->geometry ?? []) > 1,
         ];
     }
 
@@ -99,14 +113,13 @@ class SafetyAuditor
     }
 
     /**
-     * Pays traversés, déduits des ports proches du départ et de l'arrivée.
+     * Réglementations des pays traversés par l'itinéraire.
      *
+     * @param  list<string>  $codes
      * @return array<int, array<string, mixed>>
      */
-    private function countries(?Cruise $cruise): array
+    private function countries(array $codes): array
     {
-        $codes = $this->countryCodes($cruise);
-
         if ($codes === []) {
             return [];
         }
@@ -127,12 +140,11 @@ class SafetyAuditor
     }
 
     /**
+     * @param  list<string>  $codes
      * @return array<int, array<string, mixed>>
      */
-    private function emergencyContacts(?Cruise $cruise): array
+    private function emergencyContacts(array $codes): array
     {
-        $codes = $this->countryCodes($cruise);
-
         $query = EmergencyContact::query()->orderBy('position');
 
         if ($codes !== []) {
@@ -152,10 +164,26 @@ class SafetyAuditor
             ->all();
     }
 
+    /** Route retenue de la croisière (ou première route calculée). */
+    private function selectedRoute(?Cruise $cruise): ?CruiseRoute
+    {
+        if ($cruise === null) {
+            return null;
+        }
+
+        return $cruise->routes()
+            ->with('segments.port', 'segments.anchorage')
+            ->orderByDesc('is_selected')
+            ->first();
+    }
+
     /**
+     * Pays traversés : ports de départ et d'arrivée, escales de la route
+     * retenue, puis échantillonnage du tracé (pays de la côte la plus proche).
+     *
      * @return list<string>
      */
-    private function countryCodes(?Cruise $cruise): array
+    private function countryCodes(?Cruise $cruise, ?CruiseRoute $route = null): array
     {
         if ($cruise === null) {
             return [];
@@ -171,7 +199,42 @@ class SafetyAuditor
             }
         }
 
+        if ($route !== null) {
+            foreach ($route->segments as $segment) {
+                $codes[] = $segment->port?->country_code;
+                $codes[] = $segment->anchorage?->country_code;
+            }
+
+            foreach ($this->samplePoints($route->geometry ?? []) as $point) {
+                $codes[] = $this->coasts->resolve($point['latitude'], $point['longitude']);
+            }
+        }
+
         return array_values(array_unique(array_filter($codes)));
+    }
+
+    /**
+     * Points répartis le long du tracé, pour la résolution des pays côtiers.
+     *
+     * @param  list<array{latitude: float, longitude: float}>  $geometry
+     * @return list<array{latitude: float, longitude: float}>
+     */
+    private function samplePoints(array $geometry): array
+    {
+        $count = count($geometry);
+
+        if ($count < 2) {
+            return [];
+        }
+
+        $step = max(1, (int) ceil($count / 40));
+        $points = [];
+
+        for ($i = 0; $i < $count; $i += $step) {
+            $points[] = $geometry[$i];
+        }
+
+        return $points;
     }
 
     /**

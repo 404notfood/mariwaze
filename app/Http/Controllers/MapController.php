@@ -8,6 +8,7 @@ use App\Models\Port;
 use App\Services\Accounts\CurrentContext;
 use App\Services\Marine\Contracts\WeatherProviderInterface;
 use App\Services\Routing\StopFinder;
+use App\Services\Safety\RouteHazardService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -18,6 +19,7 @@ class MapController extends Controller
         private readonly WeatherProviderInterface $weather,
         private readonly StopFinder $stops,
         private readonly CurrentContext $context,
+        private readonly RouteHazardService $hazards,
     ) {}
 
     public function index(Request $request): Response
@@ -59,6 +61,11 @@ class MapController extends Controller
                 'points' => $points,
                 'geometry' => $selected->geometry ?? [],
                 'available' => count($selected->geometry ?? []) > 1,
+                'hazards' => $this->hazards->alertsForGeometry(
+                    $selected->geometry ?? [],
+                    $cruise->departure_date,
+                    (int) $cruise->duration_days,
+                ),
             ];
 
             if ($points !== []) {

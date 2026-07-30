@@ -1,13 +1,16 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { AlertTriangle, Anchor, ArrowRight, Clock, MapPin, Route, Ship, Users } from 'lucide-react';
+import { AlertTriangle, Anchor, ArrowRight, Clock, MapPin, Route, Ship, ShieldAlert, Users } from 'lucide-react';
 import { useState } from 'react';
 import CruiseMap from '@/components/mariwaze/cruise-map';
+import type {CruiseStop} from '@/components/mariwaze/cruise-map';
+import HazardAlerts from '@/components/mariwaze/hazard-alerts';
+import type {HazardAlert} from '@/components/mariwaze/planner-map';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-import { appRoutes } from '@/lib/mariwaze-routes';
 import { useMariwazeRoutes } from '@/hooks/use-mariwaze-routes';
+import { appRoutes } from '@/lib/mariwaze-routes';
+import { cn } from '@/lib/utils';
 
 type LegWeather = {
     label: string;
@@ -22,6 +25,9 @@ type Leg = {
     label: string;
     from: string;
     to: string;
+    latitude: number | null;
+    longitude: number | null;
+    kind: 'port' | 'mouillage' | 'point';
     distance_nm: number;
     duration_hours: number | null;
     overnight: string | null;
@@ -44,6 +50,7 @@ type Scenario = {
     stops: number;
     geometry: Array<{ latitude: number; longitude: number }>;
     computed_at: string | null;
+    hazards: HazardAlert[];
     legs: Leg[];
 };
 
@@ -145,10 +152,33 @@ export default function CruiseShow({ cruise, scenarios }: Props) {
                 <CruiseMap
                     departure={cruise.departure_port}
                     destination={cruise.arrival_port}
-                    waypoints={current?.legs.map((leg) => leg.to) ?? []}
+                    stops={
+                        current?.legs.map((leg): CruiseStop => ({
+                            name: leg.to,
+                            latitude: leg.latitude,
+                            longitude: leg.longitude,
+                            kind: leg.kind,
+                            day: leg.day,
+                        })) ?? []
+                    }
                     routeGeometry={current?.geometry ?? []}
                     routeAvailable={(current?.geometry.length ?? 0) > 1}
+                    hazards={current?.hazards ?? []}
                 />
+
+                {current && current.hazards.length > 0 && (
+                    <Card className="border-border/60">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <ShieldAlert className="size-4 text-safety-orange" />
+                                Vigilance sur le trajet — {current.hazards.length} zone{current.hazards.length > 1 ? 's' : ''}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <HazardAlerts hazards={current.hazards} />
+                        </CardContent>
+                    </Card>
+                )}
 
                 {scenarios.length === 0 ? (
                     <Card className="border-dashed border-border/60">

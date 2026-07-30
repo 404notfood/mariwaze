@@ -7,6 +7,7 @@ use App\Models\Boat;
 use App\Models\Cruise;
 use App\Models\CruiseRoute;
 use App\Models\Port;
+use App\Services\Navigation\InlandRouteService;
 use App\Services\Navigation\PortCoordinates;
 use App\Services\Navigation\SeaRouteService;
 use App\Support\GeoScope;
@@ -27,11 +28,18 @@ class RouteGenerator
      *
      * @var list<float>
      */
-    private const SEARCH_RADII_NM = [15, 30, 60];
+    private const SEARCH_RADII_NM = [15.0, 30.0, 60.0];
+
+    /**
+     * En deçà de cette distance, le nœud d'accrochage du moteur maritime est
+     * remplacé par l'escale réelle plutôt que relié par un aller-retour.
+     */
+    private const SNAP_REPLACE_NM = 25.0;
 
     public function __construct(
         private readonly PortCoordinates $ports,
         private readonly SeaRouteService $router,
+        private readonly InlandRouteService $inland,
         private readonly StopFinder $stops,
         private readonly BoatCompatibilityService $compatibility,
         private readonly WeatherAnalyzer $weather,
@@ -52,13 +60,7 @@ class RouteGenerator
             return [];
         }
 
-        try {
-            $geometry = $this->router->route($departure, $destination);
-        } catch (\RuntimeException) {
-            return [];
-        }
-
-        $geometry = array_values($geometry);
+        $geometry = array_values($this->geometry($cruise, $departure, $destination));
 
         if (count($geometry) < 2) {
             return [];
@@ -103,6 +105,29 @@ class RouteGenerator
     }
 
     /**
+     * Tracé du trajet : réseau de voies navigables pour les croisières
+     * fluviales, moteur de route maritime sinon. Quand la mer ne mène pas au
+     * port demandé (port en rivière, par exemple), le réseau fluvial sert de
+     * repli.
+     *
+     * @param  array{latitude: float, longitude: float}  $departure
+     * @param  array{latitude: float, longitude: float}  $destination
+     * @return array<int, array{latitude: float, longitude: float}>
+     */
+    private function geometry(Cruise $cruise, array $departure, array $destination): array
+    {
+        if ($cruise->navigation_area === 'inland') {
+            return $this->inland->route($departure, $destination)['geometry'] ?? [];
+        }
+
+        try {
+            return $this->router->route($departure, $destination);
+        } catch (\RuntimeException) {
+            return $this->inland->route($departure, $destination)['geometry'] ?? [];
+        }
+    }
+
+    /**
      * @param  list<array{latitude: float, longitude: float}>  $geometry
      * @return array<string, mixed>
      */
@@ -112,34 +137,54 @@ class RouteGenerator
         $speed = $boat === null ? 6.0 : (float) $boat->avg_speed;
         $maxLegDistance = $scenario->maxHoursPerDay() * $speed;
 
-        $totalDistance = $this->geometryDistance($geometry);
         $waypoints = $this->splitGeometry($geometry, $maxLegDistance);
 
+        // 1. Choisir une escale réelle autour de chaque point de passage théorique.
+        $stops = [];
+
+        foreach ($waypoints as $index => $waypoint) {
+            $isLast = $index === count($waypoints) - 1;
+            $stop = $isLast
+                ? ['name' => $cruise->destination_port, 'port' => null, 'anchorage' => null, 'score' => 100]
+                : $this->pickStop($boat, $waypoint['point'], $scenario);
+
+            $place = $stop['anchorage'] ?? $stop['port'];
+            $stop['point'] = $place === null || $isLast
+                ? $waypoint['point']
+                : ['latitude' => (float) $place->latitude, 'longitude' => (float) $place->longitude];
+            $stop['index'] = $waypoint['index'];
+            $stops[] = $stop;
+        }
+
+        // 2. Tracer chaque étape par la mer, d'escale réelle en escale réelle.
+        $legs = $this->legGeometries($cruise, $geometry, $stops);
+
+        // 3. Construire les segments jour par jour sur ces tracés.
         $segments = [];
         $weatherScores = [];
         $boatScores = [];
         $departureAt = Carbon::parse($cruise->departure_date)->setTime(8, 0);
         $day = 1;
+        $totalDistance = 0.0;
+        $routeGeometry = [];
 
         $previous = ['name' => $cruise->departure_port, 'point' => $geometry[0]];
 
-        foreach ($waypoints as $index => $point) {
-            $isLast = $index === count($waypoints) - 1;
-            $stop = $isLast
-                ? ['name' => $cruise->destination_port, 'port' => null, 'anchorage' => null, 'score' => 100]
-                : $this->pickStop($boat, $point, $scenario);
+        foreach ($stops as $index => $stop) {
+            $legGeometry = $legs[$index];
+            $distance = $this->geometryDistance($legGeometry);
+            $totalDistance += $distance;
 
-            $distance = GeoScope::nauticalMiles(
-                $previous['point']['latitude'],
-                $previous['point']['longitude'],
-                $point['latitude'],
-                $point['longitude'],
-            );
+            foreach ($legGeometry as $point) {
+                if ($routeGeometry === [] || $routeGeometry[count($routeGeometry) - 1] !== $point) {
+                    $routeGeometry[] = $point;
+                }
+            }
 
             $hours = $speed > 0 ? $distance / $speed : null;
             $legWeather = $this->weather->scoreLeg(
-                $point['latitude'],
-                $point['longitude'],
+                $stop['point']['latitude'],
+                $stop['point']['longitude'],
                 $departureAt->copy()->addDays($day - 1),
                 (int) ceil($hours ?? 6),
             );
@@ -153,8 +198,8 @@ class RouteGenerator
                 'to_name' => $stop['name'],
                 'from_latitude' => $previous['point']['latitude'],
                 'from_longitude' => $previous['point']['longitude'],
-                'to_latitude' => $point['latitude'],
-                'to_longitude' => $point['longitude'],
+                'to_latitude' => $stop['point']['latitude'],
+                'to_longitude' => $stop['point']['longitude'],
                 'port_id' => $stop['port']?->id,
                 'anchorage_id' => $stop['anchorage']?->id,
                 'distance_nm' => round($distance, 2),
@@ -171,7 +216,7 @@ class RouteGenerator
                 'note' => $this->segmentNote($stop),
             ];
 
-            $previous = ['name' => $stop['name'], 'point' => $point];
+            $previous = ['name' => $stop['name'], 'point' => $stop['point']];
             $day++;
         }
 
@@ -189,10 +234,142 @@ class RouteGenerator
             'distance_nm' => (int) round($totalDistance),
             'duration_days' => max(1, count($segments)),
             'segments' => $segments,
-            'geometry' => $geometry,
+            'geometry' => $routeGeometry,
             'score' => $scored['score'],
             'breakdown' => $scored['breakdown'],
         ];
+    }
+
+    /**
+     * Tracé de chaque étape. En mer, le moteur relie les escales réelles ;
+     * sinon (fluvial, moteur indisponible), la géométrie d'origine est
+     * découpée entre les points de passage, en raccordant les extrémités aux
+     * escales retenues.
+     *
+     * @param  list<array{latitude: float, longitude: float}>  $geometry
+     * @param  list<array{point: array{latitude: float, longitude: float}, index: int}>  $stops
+     * @return list<list<array{latitude: float, longitude: float}>>
+     */
+    private function legGeometries(Cruise $cruise, array $geometry, array $stops): array
+    {
+        if ($cruise->navigation_area !== 'inland') {
+            $chain = [
+                $geometry[0],
+                ...array_map(fn (array $stop): array => $stop['point'], $stops),
+            ];
+
+            try {
+                $legs = $this->router->legs($chain);
+
+                if (count($legs) === count($stops)) {
+                    return $this->stitchLegs($legs, $chain);
+                }
+            } catch (\RuntimeException) {
+                // Repli sur la géométrie d'origine ci-dessous.
+            }
+        }
+
+        $legs = [];
+        $previousIndex = 0;
+        $previousPoint = $geometry[0];
+
+        foreach ($stops as $stop) {
+            $slice = array_slice($geometry, $previousIndex, max(1, $stop['index'] - $previousIndex) + 1);
+            $slice[0] = $previousPoint;
+            $slice[count($slice) - 1] = $stop['point'];
+            $legs[] = $slice;
+            $previousIndex = $stop['index'];
+            $previousPoint = $stop['point'];
+        }
+
+        return $legs;
+    }
+
+    /**
+     * Raccorde chaque tracé d'étape aux escales exactes : le réseau du moteur
+     * maritime est grossier et s'arrête au nœud le plus proche, parfois à
+     * plusieurs milles du port — voire au fond d'un estuaire voisin. On élague
+     * d'abord les extrémités qui éloignent de l'escale (aller-retour visible),
+     * puis on ajoute un court segment d'approche.
+     *
+     * @param  list<list<array{latitude: float, longitude: float}>>  $legs
+     * @param  list<array{latitude: float, longitude: float}>  $chain
+     * @return list<list<array{latitude: float, longitude: float}>>
+     */
+    private function stitchLegs(array $legs, array $chain): array
+    {
+        foreach ($legs as $index => $leg) {
+            $from = $chain[$index];
+            $to = $chain[$index + 1];
+
+            if ($leg === []) {
+                $legs[$index] = [$from, $to];
+
+                continue;
+            }
+
+            $leg = $this->trimLeg($leg, $from, $to);
+
+            $firstGap = GeoScope::nauticalMiles($from['latitude'], $from['longitude'], $leg[0]['latitude'], $leg[0]['longitude']);
+
+            if ($firstGap > 0.05) {
+                // Nœud d'accrochage proche : on le remplace par l'escale pour
+                // repartir en diagonale au lieu de faire un aller-retour.
+                if (count($leg) >= 2 && $firstGap <= self::SNAP_REPLACE_NM) {
+                    $leg[0] = $from;
+                } else {
+                    array_unshift($leg, $from);
+                }
+            }
+
+            $lastGap = GeoScope::nauticalMiles($to['latitude'], $to['longitude'], $leg[count($leg) - 1]['latitude'], $leg[count($leg) - 1]['longitude']);
+
+            if ($lastGap > 0.05) {
+                if (count($leg) >= 2 && $lastGap <= self::SNAP_REPLACE_NM) {
+                    $leg[count($leg) - 1] = $to;
+                } else {
+                    $leg[] = $to;
+                }
+            }
+
+            $legs[$index] = $leg;
+        }
+
+        return $legs;
+    }
+
+    /**
+     * Retire les points de tête et de queue qui éloignent des extrémités
+     * réelles de l'étape : ils correspondent au trajet parasite entre l'escale
+     * et le nœud de réseau le plus proche (par exemple un détour par
+     * Saint-Nazaire pour une escale à Noirmoutier).
+     *
+     * @param  non-empty-list<array{latitude: float, longitude: float}>  $leg
+     * @param  array{latitude: float, longitude: float}  $from
+     * @param  array{latitude: float, longitude: float}  $to
+     * @return non-empty-list<array{latitude: float, longitude: float}>
+     */
+    private function trimLeg(array $leg, array $from, array $to): array
+    {
+        $end = count($leg) - 1;
+
+        while ($end >= 1
+            && GeoScope::nauticalMiles($leg[$end - 1]['latitude'], $leg[$end - 1]['longitude'], $to['latitude'], $to['longitude'])
+                <= GeoScope::nauticalMiles($leg[$end]['latitude'], $leg[$end]['longitude'], $to['latitude'], $to['longitude'])) {
+            $end--;
+        }
+
+        $start = 0;
+
+        while ($start < $end
+            && GeoScope::nauticalMiles($leg[$start + 1]['latitude'], $leg[$start + 1]['longitude'], $from['latitude'], $from['longitude'])
+                <= GeoScope::nauticalMiles($leg[$start]['latitude'], $leg[$start]['longitude'], $from['latitude'], $from['longitude'])) {
+            $start++;
+        }
+
+        $trimmed = array_slice($leg, $start, $end - $start + 1);
+
+        return $trimmed === [] ? [$leg[0]] : $trimmed;
     }
 
     /**
@@ -241,10 +418,11 @@ class RouteGenerator
     }
 
     /**
-     * Découpe le tracé en points d'étape espacés d'au plus $maxDistance milles.
+     * Découpe le tracé en points d'étape espacés d'au plus $maxDistance milles,
+     * en conservant l'indice de chaque point dans la géométrie d'origine.
      *
      * @param  list<array{latitude: float, longitude: float}>  $geometry
-     * @return list<array{latitude: float, longitude: float}>
+     * @return list<array{point: array{latitude: float, longitude: float}, index: int}>
      */
     private function splitGeometry(array $geometry, float $maxDistance): array
     {
@@ -260,15 +438,15 @@ class RouteGenerator
             );
 
             if ($accumulated >= $maxDistance) {
-                $waypoints[] = $geometry[$i];
+                $waypoints[] = ['point' => $geometry[$i], 'index' => $i];
                 $accumulated = 0.0;
             }
         }
 
-        $last = $geometry[count($geometry) - 1];
+        $lastIndex = count($geometry) - 1;
 
-        if ($waypoints === [] || $waypoints[count($waypoints) - 1] !== $last) {
-            $waypoints[] = $last;
+        if ($waypoints === [] || $waypoints[count($waypoints) - 1]['index'] !== $lastIndex) {
+            $waypoints[] = ['point' => $geometry[$lastIndex], 'index' => $lastIndex];
         }
 
         return $waypoints;

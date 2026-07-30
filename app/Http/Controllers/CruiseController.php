@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Cruise;
 use App\Models\CruiseRoute;
 use App\Models\RouteSegment;
+use App\Models\WaterwayNode;
 use App\Services\Accounts\AccountContext;
 use App\Services\Checklists\CruiseChecklistBuilder;
 use App\Services\Itinerary\CruiseDurationEstimator;
 use App\Services\Routing\RouteGenerator;
+use App\Services\Safety\RouteHazardService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -24,6 +26,7 @@ class CruiseController extends Controller
         private readonly CruiseChecklistBuilder $checklists,
         private readonly RouteGenerator $routes,
         private readonly CruiseDurationEstimator $durations,
+        private readonly RouteHazardService $hazards,
     ) {}
 
     public function index(Request $request): Response
@@ -140,7 +143,7 @@ class CruiseController extends Controller
 
         return Inertia::render('cruises/show', [
             'cruise' => $this->fromModel($model),
-            'scenarios' => $model->routes->map(fn (CruiseRoute $route): array => $this->routePayload($route))->all(),
+            'scenarios' => $model->routes->map(fn (CruiseRoute $route): array => $this->routePayload($route, $model))->all(),
         ]);
     }
 
@@ -154,7 +157,15 @@ class CruiseController extends Controller
         $routes = $this->routes->generate($cruise);
 
         if ($routes === []) {
-            return back()->with('error', "L'itinéraire n'a pas pu être calculé : vérifiez que les deux ports sont localisables par mer.");
+            if ($cruise->navigation_area === 'inland') {
+                $message = WaterwayNode::query()->exists()
+                    ? "L'itinéraire fluvial n'a pas pu être calculé : aucun chemin navigable ne relie ces deux ports dans le réseau importé."
+                    : "L'itinéraire fluvial n'a pas pu être calculé : le réseau de voies navigables n'est pas encore importé (waterways:import-overpass).";
+            } else {
+                $message = "L'itinéraire n'a pas pu être calculé : vérifiez que les deux ports sont localisables par mer.";
+            }
+
+            return back()->with('error', $message);
         }
 
         return back()->with('success', count($routes).' itinéraires calculés.');
@@ -176,7 +187,7 @@ class CruiseController extends Controller
     }
 
     /** @return array<string, mixed> */
-    private function routePayload(CruiseRoute $route): array
+    private function routePayload(CruiseRoute $route, Cruise $cruise): array
     {
         return [
             'scenario' => $route->scenario,
@@ -189,11 +200,19 @@ class CruiseController extends Controller
             'stops' => $route->stops,
             'geometry' => $route->geometry ?? [],
             'computed_at' => $route->computed_at?->toIso8601String(),
+            'hazards' => $this->hazards->alertsForGeometry(
+                $route->geometry ?? [],
+                $this->departureDate($cruise),
+                $cruise->duration_days,
+            ),
             'legs' => $route->segments->map(fn (RouteSegment $segment): array => [
                 'day' => $segment->day,
                 'label' => 'J'.$segment->day,
                 'from' => $segment->from_name,
                 'to' => $segment->to_name,
+                'latitude' => $segment->to_latitude,
+                'longitude' => $segment->to_longitude,
+                'kind' => $segment->anchorage !== null ? 'mouillage' : ($segment->port !== null ? 'port' : 'point'),
                 'distance_nm' => $segment->distance_nm,
                 'duration_hours' => $segment->duration_hours,
                 'overnight' => $segment->overnight,

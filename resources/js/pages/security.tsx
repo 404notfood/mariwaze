@@ -1,5 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
-import { AlertTriangle, CheckCircle2, Circle, Phone, Radio, Shield } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Circle, Phone, Radio, Shield, ShieldAlert } from 'lucide-react';
+import HazardAlerts from '@/components/mariwaze/hazard-alerts';
+import type {HazardAlert} from '@/components/mariwaze/planner-map';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -47,6 +49,8 @@ type SecurityData = {
     checklist: ChecklistItem[];
     countries: Country[];
     emergency: EmergencyContact[];
+    hazards: HazardAlert[];
+    route_available: boolean;
 };
 
 type Props = {
@@ -60,9 +64,18 @@ type Props = {
 };
 
 function readinessTone(readiness: number) {
-    if (readiness >= 100) return 'text-green-600 dark:text-green-400';
-    if (readiness >= 75) return 'text-lagoon';
-    if (readiness >= 40) return 'text-safety-orange';
+    if (readiness >= 100) {
+return 'text-green-600 dark:text-green-400';
+}
+
+    if (readiness >= 75) {
+return 'text-lagoon';
+}
+
+    if (readiness >= 40) {
+return 'text-safety-orange';
+}
+
     return 'text-destructive';
 }
 
@@ -121,6 +134,32 @@ export default function Security({ securityData, cruise }: Props) {
                             <Badge variant="secondary" className="text-base">
                                 {done}/{required.length} équipements requis
                             </Badge>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {cruise && (
+                    <Card className="border-border/60">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <ShieldAlert className="size-4 text-safety-orange" />
+                                Dangers et vigilance sur le trajet
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {!securityData.route_available ? (
+                                <p className="text-sm text-muted-foreground">
+                                    Calculez l&apos;itinéraire de la croisière pour analyser les zones traversées
+                                    (zones militaires, interactions orques, piraterie, trafic dense…).
+                                </p>
+                            ) : securityData.hazards.length === 0 ? (
+                                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <CheckCircle2 className="size-4 text-green-600" />
+                                    Aucune zone de vigilance connue sur le trajet retenu.
+                                </p>
+                            ) : (
+                                <HazardAlerts hazards={securityData.hazards} />
+                            )}
                         </CardContent>
                     </Card>
                 )}
@@ -194,8 +233,8 @@ export default function Security({ securityData, cruise }: Props) {
                             <CardContent className="space-y-4">
                                 {securityData.countries.length === 0 ? (
                                     <p className="text-sm text-muted-foreground">
-                                        Les pays traversés seront identifiés une fois les ports de départ et
-                                        d&apos;arrivée localisés.
+                                        Les pays traversés sont déduits de l&apos;itinéraire : calculez la route de
+                                        votre croisière pour adapter la réglementation et les numéros d&apos;urgence.
                                     </p>
                                 ) : (
                                     securityData.countries.map((country) => (
