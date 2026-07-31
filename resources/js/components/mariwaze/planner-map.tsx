@@ -138,7 +138,7 @@ export default function PlannerMap({ points, onMapClick, className, marine, rout
 return;
 }
 
-            map = L.map(element.current, { zoomControl: true, attributionControl: true });
+            map = L.map(element.current, { zoomControl: true, attributionControl: true, center: [46.7, -2.4], zoom: 6 });
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 18, attribution: '&copy; OpenStreetMap contributors',
             }).addTo(map);
