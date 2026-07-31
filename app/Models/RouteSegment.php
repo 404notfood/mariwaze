@@ -24,6 +24,7 @@ class RouteSegment extends Model
         'anchorage_id',
         'distance_nm',
         'duration_hours',
+        'min_depth_meters',
         'overnight',
         'weather_score',
         'weather_snapshot',
@@ -41,6 +42,7 @@ class RouteSegment extends Model
             'to_longitude' => 'float',
             'distance_nm' => 'float',
             'duration_hours' => 'float',
+            'min_depth_meters' => 'float',
             'weather_score' => 'integer',
             'weather_snapshot' => 'array',
         ];

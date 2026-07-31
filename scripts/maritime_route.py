@@ -81,9 +81,9 @@ def build_grid(origin, destination, margin_factor):
     lon_grid, lat_grid = np.meshgrid(lons, lats)
     land = globe.is_land(np.clip(lat_grid, -89.9, 89.9), lon_grid)
 
-    # Cellules d'eau adjacentes à la terre (dilatation 8-connexe, 2 passes).
+    # Cellules d'eau adjacentes à la terre (dilatation 8-connexe, 3 passes).
     near = land.copy()
-    for _ in range(2):
+    for _ in range(3):
         grown = near.copy()
         grown[1:, :] |= near[:-1, :]
         grown[:-1, :] |= near[1:, :]
@@ -197,6 +197,33 @@ def simplify(path, tolerance):
     return [p for i, p in enumerate(path) if keep[i]]
 
 
+def crosses_land(grid, a, b):
+    """La ligne droite entre deux cellules passe-t-elle sur la terre ?"""
+    steps = max(2, int(2 * math.hypot(b[0] - a[0], b[1] - a[1])))
+    for s in range(1, steps):
+        t = s / steps
+        r = int(round(a[0] + (b[0] - a[0]) * t))
+        c = int(round(a[1] + (b[1] - a[1]) * t))
+        if 0 <= r < grid["rows"] and 0 <= c < grid["cols"] and grid["land"][r, c]:
+            return True
+    return False
+
+
+def safe_simplify(grid, path, tolerance):
+    """Douglas-Peucker, mais aucun raccourci ne doit couper la terre."""
+    simplified = simplify(path, tolerance)
+    index_of = {point: i for i, point in enumerate(path)}
+    result = [simplified[0]]
+    for i in range(1, len(simplified)):
+        a, b = simplified[i - 1], simplified[i]
+        if crosses_land(grid, a, b):
+            # On réinjecte le tracé original entre les deux sommets.
+            result.extend(path[index_of[a] + 1:index_of[b] + 1])
+        else:
+            result.append(b)
+    return result
+
+
 def coastal_leg(origin, destination):
     """Tracé côtier fin, ou None si le corridor ne mène pas au but."""
     for margin_factor in (0.45, 1.0):
@@ -208,7 +235,7 @@ def coastal_leg(origin, destination):
         path = a_star(grid, start, goal)
         if path is None:
             continue
-        path = simplify(path, tolerance=1.2)
+        path = safe_simplify(grid, path, tolerance=1.2)
         coordinates = [
             [grid["lon_min"] + c * grid["cell"], grid["lat_min"] + r * grid["cell"]]
             for r, c in path

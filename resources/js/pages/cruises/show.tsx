@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { AlertTriangle, Anchor, ArrowRight, Clock, MapPin, Route, Ship, ShieldAlert, Users } from 'lucide-react';
+import { AlertTriangle, Anchor, ArrowRight, Clock, MapPin, Route, Ship, ShieldAlert, Users, Waves } from 'lucide-react';
 import { useState } from 'react';
 import CruiseMap from '@/components/mariwaze/cruise-map';
 import type {CruiseStop} from '@/components/mariwaze/cruise-map';
@@ -30,6 +30,8 @@ type Leg = {
     kind: 'port' | 'mouillage' | 'point';
     distance_nm: number;
     duration_hours: number | null;
+    min_depth_meters: number | null;
+    depth_warning: boolean;
     overnight: string | null;
     weather: LegWeather;
     note: string | null;
@@ -316,6 +318,18 @@ export default function CruiseShow({ cruise, scenarios }: Props) {
                                                             {leg.overnight}
                                                         </span>
                                                     )}
+                                                    {leg.min_depth_meters !== null && (
+                                                        <span
+                                                            className={cn(
+                                                                'flex items-center gap-1',
+                                                                leg.depth_warning && 'font-semibold text-destructive',
+                                                            )}
+                                                            title="Profondeur minimale sur l'étape, au zéro des cartes (EMODnet, hors marée)"
+                                                        >
+                                                            <Waves className="size-3" />
+                                                            min {leg.min_depth_meters.toFixed(1)} m
+                                                        </span>
+                                                    )}
                                                 </p>
                                             </div>
 
@@ -328,6 +342,14 @@ export default function CruiseShow({ cruise, scenarios }: Props) {
                                                 </div>
                                             )}
                                         </div>
+
+                                        {leg.depth_warning && leg.min_depth_meters !== null && (
+                                            <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-destructive">
+                                                <AlertTriangle className="size-3 shrink-0" />
+                                                Passage à ~{leg.min_depth_meters.toFixed(1)} m de fond : juste pour votre
+                                                tirant d&apos;eau (marge 0,5 m). Vérifiez marées et cartographie officielle.
+                                            </p>
+                                        )}
 
                                         {leg.note && (
                                             <p className="mt-2 text-xs text-muted-foreground">{leg.note}</p>

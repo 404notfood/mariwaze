@@ -84,6 +84,46 @@ class RouteHazardTest extends TestCase
         $this->assertSame([], app(RouteHazardService::class)->alertsForGeometry([]));
     }
 
+    public function test_a_polygon_zone_is_detected_when_the_route_crosses_it(): void
+    {
+        HazardZone::create([
+            'slug' => 'test-dst-polygone',
+            'name' => 'DST test',
+            'category' => 'traffic',
+            'severity' => 'danger',
+            'latitude' => 48.7,
+            'longitude' => -5.5,
+            'radius_nm' => 30,
+            'description' => 'Zone de test polygonale.',
+            'geometry' => [
+                ['latitude' => 48.5, 'longitude' => -5.8],
+                ['latitude' => 48.9, 'longitude' => -5.8],
+                ['latitude' => 48.9, 'longitude' => -5.2],
+                ['latitude' => 48.5, 'longitude' => -5.2],
+            ],
+        ]);
+
+        $service = app(RouteHazardService::class);
+
+        // Traverse le carré : alerte « sur le trajet » avec le contour.
+        $crossing = $service->alertsForGeometry([
+            ['latitude' => 48.7, 'longitude' => -6.5],
+            ['latitude' => 48.7, 'longitude' => -4.5],
+        ]);
+
+        $this->assertTrue($crossing[0]['on_route']);
+        $this->assertCount(4, $crossing[0]['geometry']);
+
+        // Passe au sud du carré sans le toucher : « à proximité » seulement.
+        $nearby = $service->alertsForGeometry([
+            ['latitude' => 48.3, 'longitude' => -6.5],
+            ['latitude' => 48.3, 'longitude' => -4.5],
+        ]);
+
+        $this->assertFalse($nearby[0]['on_route']);
+        $this->assertGreaterThan(0, $nearby[0]['distance_nm']);
+    }
+
     public function test_coastal_countries_are_resolved_along_the_route(): void
     {
         $resolver = app(CoastalCountryResolver::class);

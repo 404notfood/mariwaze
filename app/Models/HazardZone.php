@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
  * zones successives.
  *
  * @property-read list<int>|null $months
+ * @property-read array<int, array{latitude: float, longitude: float}>|null $geometry
  */
 class HazardZone extends Model
 {

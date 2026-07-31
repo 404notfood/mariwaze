@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Boat;
 use App\Models\Cruise;
 use App\Models\CruiseRoute;
 use App\Models\RouteSegment;
@@ -189,6 +190,10 @@ class CruiseController extends Controller
     /** @return array<string, mixed> */
     private function routePayload(CruiseRoute $route, Cruise $cruise): array
     {
+        // Marge de pilote : tirant d'eau + 50 cm sous la quille.
+        $boat = $cruise->boat;
+        $safeDepth = $boat instanceof Boat ? $boat->draft + 0.5 : null;
+
         return [
             'scenario' => $route->scenario,
             'label' => $route->label,
@@ -215,6 +220,10 @@ class CruiseController extends Controller
                 'kind' => $segment->anchorage !== null ? 'mouillage' : ($segment->port !== null ? 'port' : 'point'),
                 'distance_nm' => $segment->distance_nm,
                 'duration_hours' => $segment->duration_hours,
+                'min_depth_meters' => $segment->min_depth_meters,
+                'depth_warning' => $segment->min_depth_meters !== null
+                    && $safeDepth !== null
+                    && $segment->min_depth_meters < $safeDepth,
                 'overnight' => $segment->overnight,
                 'weather' => $segment->weather_snapshot,
                 'note' => $segment->note,

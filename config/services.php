@@ -45,6 +45,11 @@ return [
         'python' => env('SEAROUTE_PYTHON', 'C:\\Users\\lprad\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe'),
     ],
 
+    'emodnet' => [
+        'url' => env('EMODNET_REST_URL', 'https://rest.emodnet-bathymetry.eu'),
+        'timeout' => (int) env('EMODNET_TIMEOUT', 12),
+    ],
+
     'overpass' => [
         'url' => env('OVERPASS_URL', 'https://overpass-api.de/api/interpreter'),
         'user_agent' => env('OVERPASS_USER_AGENT', 'MariWaze/1.0 (contact@mariwaze.test)'),

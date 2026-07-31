@@ -15,8 +15,8 @@ class SeaRouteService
      */
     public function route(array $origin, array $destination): array
     {
-        // v2 : routeur côtier fin (A* sur masque terre/mer) dans le script Python.
-        $key = sprintf('searoute:v2:%0.3f:%0.3f:%0.3f:%0.3f', $origin['latitude'], $origin['longitude'], $destination['latitude'], $destination['longitude']);
+        // v3 : routeur côtier fin, simplification qui ne coupe jamais la terre.
+        $key = sprintf('searoute:v3:%0.3f:%0.3f:%0.3f:%0.3f', $origin['latitude'], $origin['longitude'], $destination['latitude'], $destination['longitude']);
 
         return Cache::remember($key, now()->addDays(30), function () use ($origin, $destination): array {
             return $this->toPoints($this->run(['origin' => $origin, 'destination' => $destination], 30));
@@ -40,7 +40,7 @@ class SeaRouteService
             round($point['latitude'], 3),
             round($point['longitude'], 3),
         ], $points);
-        $key = 'searoute:legs:v2:'.md5(json_encode($rounded, JSON_THROW_ON_ERROR));
+        $key = 'searoute:legs:v3:'.md5(json_encode($rounded, JSON_THROW_ON_ERROR));
 
         return Cache::remember($key, now()->addDays(30), function () use ($points): array {
             $payload = $this->run(['waypoints' => $points], 60);

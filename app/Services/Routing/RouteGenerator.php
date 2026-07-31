@@ -7,6 +7,7 @@ use App\Models\Boat;
 use App\Models\Cruise;
 use App\Models\CruiseRoute;
 use App\Models\Port;
+use App\Services\Marine\EmodnetBathymetryService;
 use App\Services\Navigation\InlandRouteService;
 use App\Services\Navigation\PortCoordinates;
 use App\Services\Navigation\SeaRouteService;
@@ -44,6 +45,7 @@ class RouteGenerator
         private readonly BoatCompatibilityService $compatibility,
         private readonly WeatherAnalyzer $weather,
         private readonly RouteScorer $scorer,
+        private readonly EmodnetBathymetryService $bathymetry,
     ) {}
 
     /**
@@ -181,6 +183,12 @@ class RouteGenerator
                 }
             }
 
+            try {
+                $minDepth = $this->bathymetry->minDepthAlongPath($legGeometry);
+            } catch (\Throwable) {
+                $minDepth = null;
+            }
+
             $hours = $speed > 0 ? $distance / $speed : null;
             $legWeather = $this->weather->scoreLeg(
                 $stop['point']['latitude'],
@@ -204,6 +212,7 @@ class RouteGenerator
                 'anchorage_id' => $stop['anchorage']?->id,
                 'distance_nm' => round($distance, 2),
                 'duration_hours' => $hours === null ? null : round($hours, 2),
+                'min_depth_meters' => $minDepth,
                 'overnight' => $stop['anchorage'] !== null ? 'Mouillage' : 'Port',
                 'weather_score' => $legWeather['score'],
                 'weather_snapshot' => [
