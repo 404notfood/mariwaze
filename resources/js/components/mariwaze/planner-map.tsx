@@ -214,8 +214,14 @@ return;
         }).catch(() => undefined);
 
         return () => {
- active = false; map?.remove(); 
-};
+            active = false;
+            if (map) {
+                map.remove();
+            } else if (element.current && (element.current as any)._leaflet_id) {
+                delete (element.current as any)._leaflet_id;
+                (element.current as any)._leaflet_events = undefined;
+            }
+        };
     }, [points, onMapClick, marine, routeGeometry, routeAvailable, hazards]);
 
     return <div ref={element} className={className ?? 'h-[58vh] min-h-[420px] w-full bg-muted'} aria-label="Carte interactive de préparation" />;
