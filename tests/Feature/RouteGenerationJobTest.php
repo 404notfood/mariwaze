@@ -16,6 +16,12 @@ class RouteGenerationJobTest extends TestCase
     use AuthenticatesAccount;
     use RefreshDatabase;
 
+    public function test_the_queue_does_not_retry_while_a_long_route_job_can_still_be_running(): void
+    {
+        $job = new GenerateCruiseRoutes(1, (string) Str::uuid());
+        $this->assertGreaterThan($job->timeout, config('queue.connections.database.retry_after'));
+    }
+
     public function test_generation_job_records_a_failed_empty_result(): void
     {
         $token = (string) Str::uuid();
