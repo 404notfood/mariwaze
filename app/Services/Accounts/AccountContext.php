@@ -4,6 +4,8 @@ namespace App\Services\Accounts;
 
 use App\Models\Organization;
 use App\Models\User;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class AccountContext
@@ -15,7 +17,7 @@ class AccountContext
         }
 
         if ($user === null) {
-            return Organization::query()->where('type', 'demo')->latest()->first();
+            return null;
         }
 
         $organization = $user->organizations()->latest('organizations.created_at')->first();
@@ -24,32 +26,32 @@ class AccountContext
             return $organization;
         }
 
-        $organization = Organization::create([
-            'name' => $user->name,
-            'type' => 'personal',
-            'owner_id' => $user->id,
-        ]);
+        return DB::transaction(function () use ($user): Organization {
+            $organization = Organization::query()->firstOrCreate(
+                ['personal_owner_id' => $user->id],
+                ['owner_id' => $user->id, 'type' => 'personal', 'name' => $user->name],
+            );
+            $organization->members()->syncWithoutDetaching([
+                $user->id => ['role' => 'owner'],
+            ]);
 
-        $organization->members()->attach($user->id, ['role' => 'owner']);
-
-        return $organization;
+            return $organization;
+        });
     }
 
-    public function currentOrDemo(?User $user): Organization
+    /** @throws AuthenticationException */
+    public function currentOrCreate(?User $user): Organization
     {
+        if ($user === null) {
+            throw new AuthenticationException;
+        }
+
         $organization = $this->current($user);
 
         if ($organization !== null) {
             return $organization;
         }
 
-        if (! Schema::hasTable('organizations')) {
-            throw new \RuntimeException('The organizations table is missing. Run php artisan migrate.');
-        }
-
-        return Organization::create([
-            'name' => 'Compte demo Mariwaze',
-            'type' => 'demo',
-        ]);
+        throw new \RuntimeException('The organizations table is missing. Run php artisan migrate.');
     }
 }

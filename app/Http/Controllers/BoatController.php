@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\BoatRequest;
 use App\Models\Boat;
 use App\Services\Accounts\AccountContext;
 use App\Services\Safety\SafetyAuditor;
@@ -19,7 +20,7 @@ class BoatController extends Controller
 
     public function show(Request $request): Response
     {
-        $organization = $this->accounts->currentOrDemo($request->user());
+        $organization = $this->accounts->currentOrCreate($request->user());
 
         return Inertia::render('boat-show', [
             'boat' => $this->payload($this->boat($organization->id)),
@@ -34,7 +35,7 @@ class BoatController extends Controller
 
     public function setup(Request $request): Response
     {
-        $organization = $this->accounts->currentOrDemo($request->user());
+        $organization = $this->accounts->currentOrCreate($request->user());
 
         return Inertia::render('boat-setup', [
             'boat' => $this->payload($this->boat($organization->id)),
@@ -42,11 +43,12 @@ class BoatController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(BoatRequest $request): RedirectResponse
     {
-        $data = $this->validatedBoat($request);
+        $data = $this->validatedBoat($request->validated());
 
-        $organization = $this->accounts->currentOrDemo($request->user());
+        $organization = $this->accounts->currentOrCreate($request->user());
+        $this->authorize('manageFleet', $organization);
         $boat = $this->boat($organization->id);
         $data['user_id'] = $request->user()?->id;
         $data['organization_id'] = $organization->id;
@@ -61,10 +63,11 @@ class BoatController extends Controller
         return to_route('boat');
     }
 
-    public function storeInFleet(Request $request): RedirectResponse
+    public function storeInFleet(BoatRequest $request): RedirectResponse
     {
-        $organization = $this->accounts->currentOrDemo($request->user());
-        $data = $this->validatedBoat($request);
+        $organization = $this->accounts->currentOrCreate($request->user());
+        $this->authorize('manageFleet', $organization);
+        $data = $this->validatedBoat($request->validated());
         $data['user_id'] = $request->user()?->id;
         $data['organization_id'] = $organization->id;
         $data['fleet_status'] ??= 'available';
@@ -84,7 +87,8 @@ class BoatController extends Controller
             'equipment.*' => ['boolean'],
         ]);
 
-        $organization = $this->accounts->currentOrDemo($request->user());
+        $organization = $this->accounts->currentOrCreate($request->user());
+        $this->authorize('manageFleet', $organization);
         $boat = $this->boat($organization->id);
 
         if ($boat === null) {
@@ -94,10 +98,7 @@ class BoatController extends Controller
         $boat->update([
             'equipment_json' => [
                 ...($boat->equipment_json ?? []),
-                ...collect($data['equipment'])
-                    ->only(array_keys(Boat::EQUIPMENT))
-                    ->map(fn ($value): bool => (bool) $value)
-                    ->all(),
+                ...$this->normalizedEquipment($data['equipment']),
             ],
         ]);
 
@@ -112,39 +113,38 @@ class BoatController extends Controller
             ->first();
     }
 
-    /** @return array<string, mixed> */
-    private function validatedBoat(Request $request): array
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function validatedBoat(array $data): array
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:120'],
-            'model' => ['nullable', 'string', 'max:120'],
-            'boat_type' => ['required', 'in:voilier,catamaran,moteur,deriveur'],
-            'flag' => ['nullable', 'string', 'max:80'],
-            'mmsi' => ['nullable', 'digits:9'],
-            'length' => ['required', 'numeric', 'between:2,80'],
-            'width' => ['required', 'numeric', 'between:1,20'],
-            'draft' => ['required', 'numeric', 'between:0,8'],
-            'mast_height' => ['nullable', 'numeric', 'between:0,70'],
-            'avg_speed' => ['required', 'numeric', 'between:1,40'],
-            'fuel_range' => ['nullable', 'integer', 'between:0,5000'],
-            'fleet_status' => ['nullable', 'in:available,maintenance,booked,inactive'],
-            'berths' => ['nullable', 'integer', 'between:0,80'],
-            'fuel_consumption_per_hour' => ['nullable', 'numeric', 'between:0,500'],
-            'equipment' => ['nullable', 'array'],
-            'equipment.*' => ['boolean'],
-        ]);
-
         // Seuls les équipements connus sont conservés, sous forme de booléens.
         if (array_key_exists('equipment', $data)) {
-            $data['equipment_json'] = collect($data['equipment'] ?? [])
-                ->only(array_keys(Boat::EQUIPMENT))
-                ->map(fn ($value): bool => (bool) $value)
-                ->all();
+            $data['equipment_json'] = $this->normalizedEquipment($data['equipment']);
         }
 
         unset($data['equipment']);
 
         return $data;
+    }
+
+    /** @return array<string, bool> */
+    private function normalizedEquipment(mixed $equipment): array
+    {
+        if (! is_array($equipment)) {
+            return [];
+        }
+
+        $normalized = [];
+
+        foreach (array_keys(Boat::EQUIPMENT) as $key) {
+            if (array_key_exists($key, $equipment)) {
+                $normalized[$key] = (bool) $equipment[$key];
+            }
+        }
+
+        return $normalized;
     }
 
     /** @return array<int, array<string, int|float|string>> */

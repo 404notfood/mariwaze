@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 class SeamarkController extends Controller
 {
     private const MAX_SPAN_DEGREES = 2.0;
+
     private const MAX_RESULTS = 800;
 
     public function __invoke(Request $request): JsonResponse

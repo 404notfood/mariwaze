@@ -15,18 +15,16 @@ class ImportOverpassWaterways extends Command
 
     public function handle(): int
     {
-        $path = $this->argument('path');
+        $path = $this->input()->string('path')->toString();
         if (! is_file($path)) {
             $this->error("Fichier introuvable : {$path}");
 
             return self::FAILURE;
         }
 
-        $document = json_decode((string) file_get_contents($path), true, flags: JSON_THROW_ON_ERROR);
-        $ways = collect($document['elements'] ?? [])
-            ->filter(fn (mixed $element): bool => is_array($element) && ($element['type'] ?? null) === 'way' && count($element['geometry'] ?? []) > 1);
+        $ways = $this->decodeWays((string) file_get_contents($path));
 
-        if ($ways->isEmpty()) {
+        if ($ways === []) {
             $this->error('Aucune voie avec geometrie dans ce fichier.');
 
             return self::FAILURE;
@@ -41,14 +39,12 @@ class ImportOverpassWaterways extends Command
             $nodes = 0;
             $edges = 0;
             foreach ($ways as $way) {
-                $coordinates = collect($way['geometry'])->map(fn (array $point): array => [
-                    'latitude' => round((float) $point['lat'], 7),
-                    'longitude' => round((float) $point['lon'], 7),
-                ]);
-                $tags = $way['tags'] ?? [];
+                $coordinates = $way['geometry'];
+                $tags = $way['tags'];
 
-                foreach ($coordinates->sliding(2) as $segment) {
-                    [$fromPoint, $toPoint] = $segment->all();
+                for ($index = 1; $index < count($coordinates); $index++) {
+                    $fromPoint = $coordinates[$index - 1];
+                    $toPoint = $coordinates[$index];
                     $from = WaterwayNode::query()->firstOrCreate($fromPoint);
                     $to = WaterwayNode::query()->firstOrCreate($toPoint);
                     $nodes += $from->wasRecentlyCreated ? 1 : 0;
@@ -75,7 +71,52 @@ class ImportOverpassWaterways extends Command
         return self::SUCCESS;
     }
 
-    /** @param array{latitude: float, longitude: float} $from @param array{latitude: float, longitude: float} $to */
+    /**
+     * @return list<array{geometry: list<array{latitude: float, longitude: float}>, tags: array<string, mixed>}>
+     */
+    private function decodeWays(string $json): array
+    {
+        $document = json_decode($json, true, flags: JSON_THROW_ON_ERROR);
+
+        if (! is_array($document) || ! is_array($document['elements'] ?? null)) {
+            return [];
+        }
+
+        $ways = [];
+
+        foreach ($document['elements'] as $element) {
+            if (! is_array($element) || ($element['type'] ?? null) !== 'way' || ! is_array($element['geometry'] ?? null)) {
+                continue;
+            }
+
+            $geometry = [];
+
+            foreach ($element['geometry'] as $point) {
+                if (! is_array($point) || ! is_numeric($point['lat'] ?? null) || ! is_numeric($point['lon'] ?? null)) {
+                    continue;
+                }
+
+                $geometry[] = [
+                    'latitude' => round((float) $point['lat'], 7),
+                    'longitude' => round((float) $point['lon'], 7),
+                ];
+            }
+
+            if (count($geometry) < 2) {
+                continue;
+            }
+
+            $tags = is_array($element['tags'] ?? null) ? $element['tags'] : [];
+            $ways[] = ['geometry' => $geometry, 'tags' => $tags];
+        }
+
+        return $ways;
+    }
+
+    /**
+     * @param  array{latitude: float, longitude: float}  $from
+     * @param  array{latitude: float, longitude: float}  $to
+     */
     private function meters(array $from, array $to): float
     {
         $latitude = deg2rad($to['latitude'] - $from['latitude']);

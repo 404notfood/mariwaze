@@ -15,10 +15,12 @@ class CruiseDurationController extends Controller
             'departure_port' => ['required', 'string', 'max:120'],
             'destination_port' => ['required', 'string', 'max:120'],
             'navigation_style' => ['required', 'in:Rapide,Confort,Découverte,Famille'],
+            'departure_place' => ['nullable', 'string', 'max:80'],
+            'destination_place' => ['nullable', 'string', 'max:80'],
         ]);
 
         return response()->json([
-            'days' => $estimator->estimate($data['departure_port'], $data['destination_port'], $data['navigation_style']),
+            'days' => $estimator->estimate($data['departure_port'], $data['destination_port'], $data['navigation_style'], $data['departure_place'] ?? null, $data['destination_place'] ?? null),
         ]);
     }
 }

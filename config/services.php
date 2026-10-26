@@ -42,7 +42,7 @@ return [
     ],
 
     'searoute' => [
-        'python' => env('SEAROUTE_PYTHON', 'C:\\Users\\lprad\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe'),
+        'python' => env('SEAROUTE_PYTHON', 'python'),
     ],
 
     'emodnet' => [

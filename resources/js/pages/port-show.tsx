@@ -1,13 +1,18 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Anchor, MapPin, Phone, Radio, Ship, Users } from 'lucide-react';
-import { type FormEvent } from 'react';
+import Anchor from 'lucide-react/icons/anchor';
+import MapPin from 'lucide-react/icons/map-pin';
+import Phone from 'lucide-react/icons/phone';
+import Radio from 'lucide-react/icons/radio';
+import Ship from 'lucide-react/icons/ship';
+import Users from 'lucide-react/icons/users';
+import type { FormEvent } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
 import { appRoutes } from '@/lib/mariwaze-routes';
+import { cn } from '@/lib/utils';
 
 type Review = {
     id: number;
@@ -38,7 +43,11 @@ type Port = {
     night_price_eur: number | null;
     description: string | null;
     source: string;
-    compatibility: { compatible: boolean; score: number; reasons: string[] } | null;
+    compatibility: {
+        compatible: boolean;
+        score: number;
+        reasons: string[];
+    } | null;
     reviews: Review[];
 };
 
@@ -48,14 +57,32 @@ type Props = {
 
 export default function PortShow({ port }: Props) {
     const info: [string, string][] = [
-        ['Profondeur', port.min_depth_meters !== null ? `${port.min_depth_meters} m` : 'Non renseignée'],
+        [
+            'Profondeur',
+            port.min_depth_meters !== null
+                ? `${port.min_depth_meters} m`
+                : 'Non renseignée',
+        ],
         [
             'Longueur max.',
-            port.max_length_meters !== null ? `${port.max_length_meters} m` : 'Non renseignée',
+            port.max_length_meters !== null
+                ? `${port.max_length_meters} m`
+                : 'Non renseignée',
         ],
-        ['Largeur max.', port.max_width_meters !== null ? `${port.max_width_meters} m` : 'Non renseignée'],
-        ['Places', port.berths !== null ? String(port.berths) : 'Non renseigné'],
-        ['Position', `${port.latitude.toFixed(4)}, ${port.longitude.toFixed(4)}`],
+        [
+            'Largeur max.',
+            port.max_width_meters !== null
+                ? `${port.max_width_meters} m`
+                : 'Non renseignée',
+        ],
+        [
+            'Places',
+            port.berths !== null ? String(port.berths) : 'Non renseigné',
+        ],
+        [
+            'Position',
+            `${port.latitude.toFixed(4)}, ${port.longitude.toFixed(4)}`,
+        ],
     ];
 
     return (
@@ -67,8 +94,12 @@ export default function PortShow({ port }: Props) {
                         <div className="overflow-hidden rounded-2xl border border-sand/60 bg-gradient-to-br from-sea-blue/10 to-lagoon/10 p-8">
                             <div className="mb-4 flex items-start justify-between gap-4">
                                 <div>
-                                    <p className="text-sm text-muted-foreground">Fiche port</p>
-                                    <h1 className="text-3xl font-bold">⚓ {port.name}</h1>
+                                    <p className="text-sm text-muted-foreground">
+                                        Fiche port
+                                    </p>
+                                    <h1 className="text-3xl font-bold">
+                                        ⚓ {port.name}
+                                    </h1>
                                     <p className="mt-1 flex items-center gap-1 text-muted-foreground">
                                         <MapPin className="size-4" />
                                         {port.region ?? 'Région non renseignée'}
@@ -77,18 +108,26 @@ export default function PortShow({ port }: Props) {
                                 <div className="text-right">
                                     {port.rating !== null ? (
                                         <>
-                                            <p className="text-lg text-amber-500">★ {port.rating}</p>
+                                            <p className="text-lg text-amber-500">
+                                                ★ {port.rating}
+                                            </p>
                                             <p className="text-xs text-muted-foreground">
                                                 {port.reviews_count} avis
                                             </p>
                                         </>
                                     ) : (
-                                        <p className="text-xs text-muted-foreground">Aucun avis</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Aucun avis
+                                        </p>
                                     )}
                                 </div>
                             </div>
 
-                            {port.description && <p className="text-lg leading-relaxed">{port.description}</p>}
+                            {port.description && (
+                                <p className="text-lg leading-relaxed">
+                                    {port.description}
+                                </p>
+                            )}
 
                             {port.services.length > 0 && (
                                 <div className="mt-4 flex flex-wrap gap-2">
@@ -105,8 +144,8 @@ export default function PortShow({ port }: Props) {
                             )}
 
                             <p className="mt-4 text-xs text-muted-foreground">
-                                Données issues d&apos;OpenStreetMap — services et tarifs à confirmer auprès
-                                de la capitainerie.
+                                Données issues d&apos;OpenStreetMap — services
+                                et tarifs à confirmer auprès de la capitainerie.
                             </p>
                         </div>
 
@@ -120,7 +159,8 @@ export default function PortShow({ port }: Props) {
                             <CardContent className="space-y-4">
                                 {port.reviews.length === 0 ? (
                                     <p className="text-sm text-muted-foreground">
-                                        Aucun avis pour l&apos;instant. Partagez votre expérience de ce port.
+                                        Aucun avis pour l&apos;instant. Partagez
+                                        votre expérience de ce port.
                                     </p>
                                 ) : (
                                     port.reviews.map((review) => (
@@ -129,7 +169,9 @@ export default function PortShow({ port }: Props) {
                                             className="rounded-xl border border-border/60 p-4"
                                         >
                                             <div className="mb-2 flex items-center justify-between">
-                                                <span className="font-medium">{review.author}</span>
+                                                <span className="font-medium">
+                                                    {review.author}
+                                                </span>
                                                 {review.visited_on && (
                                                     <span className="text-xs text-muted-foreground">
                                                         {review.visited_on}
@@ -157,7 +199,9 @@ export default function PortShow({ port }: Props) {
                         {port.compatibility && (
                             <Card className="border-border/60">
                                 <CardContent className="pt-6">
-                                    <p className="text-sm text-muted-foreground">Adapté à votre bateau</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        Adapté à votre bateau
+                                    </p>
                                     <div
                                         className={cn(
                                             'mt-2 inline-flex rounded-lg px-3 py-1.5 text-sm font-semibold',
@@ -166,14 +210,20 @@ export default function PortShow({ port }: Props) {
                                                 : 'bg-safety-orange/15 text-safety-orange',
                                         )}
                                     >
-                                        {port.compatibility.compatible ? 'Compatible' : 'À vérifier'} —{' '}
-                                        {port.compatibility.score}%
+                                        {port.compatibility.compatible
+                                            ? 'Compatible'
+                                            : 'À vérifier'}{' '}
+                                        — {port.compatibility.score}%
                                     </div>
                                     {port.compatibility.reasons.length > 0 && (
                                         <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
-                                            {port.compatibility.reasons.map((reason) => (
-                                                <li key={reason}>• {reason}</li>
-                                            ))}
+                                            {port.compatibility.reasons.map(
+                                                (reason) => (
+                                                    <li key={reason}>
+                                                        • {reason}
+                                                    </li>
+                                                ),
+                                            )}
                                         </ul>
                                     )}
                                 </CardContent>
@@ -182,13 +232,22 @@ export default function PortShow({ port }: Props) {
 
                         <Card className="border-border/60">
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-base">Caractéristiques</CardTitle>
+                                <CardTitle className="text-base">
+                                    Caractéristiques
+                                </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-2 text-sm">
                                 {info.map(([label, value]) => (
-                                    <div key={label} className="flex justify-between gap-4">
-                                        <span className="text-muted-foreground">{label}</span>
-                                        <span className="text-right font-medium">{value}</span>
+                                    <div
+                                        key={label}
+                                        className="flex justify-between gap-4"
+                                    >
+                                        <span className="text-muted-foreground">
+                                            {label}
+                                        </span>
+                                        <span className="text-right font-medium">
+                                            {value}
+                                        </span>
                                     </div>
                                 ))}
                             </CardContent>
@@ -197,7 +256,9 @@ export default function PortShow({ port }: Props) {
                         {(port.vhf_channel || port.phone || port.website) && (
                             <Card className="border-border/60">
                                 <CardHeader className="pb-2">
-                                    <CardTitle className="text-base">Contact capitainerie</CardTitle>
+                                    <CardTitle className="text-base">
+                                        Contact capitainerie
+                                    </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-2 text-sm">
                                     {port.vhf_channel && (
@@ -256,7 +317,10 @@ function ReviewForm({ slug }: { slug: string }) {
     };
 
     return (
-        <form onSubmit={submit} className="space-y-3 rounded-xl border border-dashed border-border/60 p-4">
+        <form
+            onSubmit={submit}
+            className="space-y-3 rounded-xl border border-dashed border-border/60 p-4"
+        >
             <p className="text-sm font-medium">Partager mon avis</p>
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -270,9 +334,15 @@ function ReviewForm({ slug }: { slug: string }) {
                         min={1}
                         max={5}
                         value={data.rating}
-                        onChange={(event) => setData('rating', Number(event.target.value))}
+                        onChange={(event) =>
+                            setData('rating', Number(event.target.value))
+                        }
                     />
-                    {errors.rating && <p className="mt-1 text-xs text-destructive">{errors.rating}</p>}
+                    {errors.rating && (
+                        <p className="mt-1 text-xs text-destructive">
+                            {errors.rating}
+                        </p>
+                    )}
                 </div>
                 <div>
                     <Label htmlFor="visited_on" className="mb-1 block text-xs">
@@ -282,7 +352,9 @@ function ReviewForm({ slug }: { slug: string }) {
                         id="visited_on"
                         type="date"
                         value={data.visited_on}
-                        onChange={(event) => setData('visited_on', event.target.value)}
+                        onChange={(event) =>
+                            setData('visited_on', event.target.value)
+                        }
                     />
                 </div>
             </div>
@@ -299,10 +371,18 @@ function ReviewForm({ slug }: { slug: string }) {
                     className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
                     placeholder="Accueil, services, accès, tarifs…"
                 />
-                {errors.body && <p className="mt-1 text-xs text-destructive">{errors.body}</p>}
+                {errors.body && (
+                    <p className="mt-1 text-xs text-destructive">
+                        {errors.body}
+                    </p>
+                )}
             </div>
 
-            <Button type="submit" disabled={processing} className="bg-sea-blue hover:bg-sea-blue/90">
+            <Button
+                type="submit"
+                disabled={processing}
+                className="bg-sea-blue hover:bg-sea-blue/90"
+            >
                 Publier mon avis
             </Button>
         </form>

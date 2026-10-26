@@ -84,6 +84,8 @@ class MaritimePlacesTest extends TestCase
 
     public function test_the_explore_page_lists_real_places(): void
     {
+        $this->actingAs(User::factory()->create());
+
         Port::create([
             'slug' => 'port-test', 'name' => 'Port de test', 'latitude' => 43.0, 'longitude' => 5.0,
             'source' => 'test', 'source_ref' => 'p1',
@@ -105,12 +107,18 @@ class MaritimePlacesTest extends TestCase
     public function test_an_anchorage_page_shows_its_reviews(): void
     {
         $user = User::factory()->create(['name' => 'Capitaine Test']);
+        $this->actingAs($user);
         $anchorage = Anchorage::create([
             'slug' => 'calanque-test', 'name' => 'Calanque de test', 'latitude' => 43.2, 'longitude' => 5.4,
             'source' => 'test', 'source_ref' => 'a2',
         ]);
 
-        $anchorage->reviews()->create(['user_id' => $user->id, 'rating' => 4, 'body' => 'Bonne tenue au mistral.']);
+        $anchorage->reviews()->create([
+            'user_id' => $user->id,
+            'rating' => 4,
+            'body' => 'Bonne tenue au mistral.',
+            'status' => 'approved',
+        ]);
 
         $this->get('/mouillages/calanque-test')
             ->assertInertia(fn (Assert $page) => $page
@@ -134,7 +142,11 @@ class MaritimePlacesTest extends TestCase
             ->post('/mouillages/baie-test/avis', ['rating' => 5, 'body' => 'Superbe mouillage.'])
             ->assertRedirect();
 
-        $this->assertDatabaseHas('reviews', ['user_id' => $user->id, 'rating' => 5]);
+        $this->assertDatabaseHas('reviews', [
+            'user_id' => $user->id,
+            'rating' => 5,
+            'status' => 'pending',
+        ]);
     }
 
     public function test_reviewing_requires_authentication(): void
@@ -146,6 +158,21 @@ class MaritimePlacesTest extends TestCase
 
         $this->post('/mouillages/anse-test/avis', ['rating' => 5])
             ->assertRedirect('/login');
+
+        $this->assertDatabaseCount('reviews', 0);
+    }
+
+    public function test_reviewing_requires_a_verified_email(): void
+    {
+        $user = User::factory()->unverified()->create();
+        Anchorage::create([
+            'slug' => 'anse-verification', 'name' => 'Anse vérification', 'latitude' => 43.4, 'longitude' => 5.6,
+            'source' => 'test', 'source_ref' => 'a5',
+        ]);
+
+        $this->actingAs($user)
+            ->post('/mouillages/anse-verification/avis', ['rating' => 5])
+            ->assertRedirect(route('verification.notice'));
 
         $this->assertDatabaseCount('reviews', 0);
     }

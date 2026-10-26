@@ -1,5 +1,5 @@
 import { usePage } from '@inertiajs/react';
-import { ChevronsUpDown } from 'lucide-react';
+import ChevronsUpDown from 'lucide-react/icons/chevrons-up-down';
 import {
     DropdownMenu,
     DropdownMenuContent,

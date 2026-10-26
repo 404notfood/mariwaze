@@ -2,14 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CruiseChecklistItem extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'cruise_checklist_id',
         'section',
@@ -27,6 +24,7 @@ class CruiseChecklistItem extends Model
         ];
     }
 
+    /** @return BelongsTo<CruiseChecklist, $this> */
     public function checklist(): BelongsTo
     {
         return $this->belongsTo(CruiseChecklist::class, 'cruise_checklist_id');

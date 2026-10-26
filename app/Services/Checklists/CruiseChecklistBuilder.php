@@ -2,7 +2,6 @@
 
 namespace App\Services\Checklists;
 
-use App\Models\ChecklistItem;
 use App\Models\ChecklistTemplate;
 use App\Models\Cruise;
 use App\Models\CruiseChecklist;
@@ -40,7 +39,7 @@ class CruiseChecklistBuilder
                 $checklist->items()->create([
                     'section' => $section->name,
                     'label' => $item->label,
-                    'quantity' => $this->quantity($item, $cruise),
+                    'quantity' => $this->quantity($item->label, $cruise),
                     'required' => $item->required,
                 ]);
             }
@@ -49,9 +48,18 @@ class CruiseChecklistBuilder
         return $checklist->load('items');
     }
 
-    private function quantity(ChecklistItem $item, Cruise $cruise): ?string
+    public function refreshQuantities(Cruise $cruise): void
     {
-        $label = mb_strtolower($item->label);
+        foreach (CruiseChecklist::with('items')->where('cruise_id', $cruise->id)->get() as $checklist) {
+            foreach ($checklist->items as $item) {
+                $item->update(['quantity' => $this->quantity($item->label, $cruise)]);
+            }
+        }
+    }
+
+    private function quantity(string $label, Cruise $cruise): ?string
+    {
+        $label = mb_strtolower($label);
 
         if (str_contains($label, 'eau')) {
             return max(1, $cruise->crew_count * $cruise->duration_days * 3).' L';
@@ -73,7 +81,7 @@ class CruiseChecklistBuilder
     private function defaultTemplate(): ChecklistTemplate
     {
         $template = ChecklistTemplate::create([
-            'name' => 'Preparation cotiere',
+            'name' => 'Préparation côtière',
             'navigation_area' => 'coastal',
             'is_active' => true,
         ]);
@@ -83,7 +91,7 @@ class CruiseChecklistBuilder
             'position' => 1,
         ]);
 
-        foreach (['Eau potable', 'Repas equipage', 'Carburant'] as $position => $label) {
+        foreach (['Eau potable', 'Repas équipage', 'Carburant'] as $position => $label) {
             $section->items()->create([
                 'label' => $label,
                 'position' => $position + 1,

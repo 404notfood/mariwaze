@@ -55,7 +55,10 @@ export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
 
             setQrCodeSvg(svg);
         } catch {
-            setErrors((prev) => [...prev, 'Failed to fetch QR code']);
+            setErrors((prev) => [
+                ...prev,
+                'Impossible de charger le QR code. Réessayez.',
+            ]);
             setQrCodeSvg(null);
         }
     }, [submit]);
@@ -68,7 +71,10 @@ export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
 
             setManualSetupKey(key);
         } catch {
-            setErrors((prev) => [...prev, 'Failed to fetch a setup key']);
+            setErrors((prev) => [
+                ...prev,
+                'Impossible de charger la clé de configuration. Réessayez.',
+            ]);
             setManualSetupKey(null);
         }
     }, [submit]);
@@ -79,7 +85,10 @@ export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
             const codes = (await submit(recoveryCodes())) as string[];
             setRecoveryCodesList(codes);
         } catch {
-            setErrors((prev) => [...prev, 'Failed to fetch recovery codes']);
+            setErrors((prev) => [
+                ...prev,
+                'Impossible de charger les codes de récupération. Réessayez.',
+            ]);
             setRecoveryCodesList([]);
         }
     }, [submit]);

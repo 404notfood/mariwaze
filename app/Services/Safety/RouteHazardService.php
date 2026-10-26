@@ -5,6 +5,7 @@ namespace App\Services\Safety;
 use App\Models\HazardZone;
 use App\Support\GeoScope;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * Croise le tracé d'une croisière avec les zones de vigilance connues
@@ -30,7 +31,7 @@ class RouteHazardService
         $months = $this->cruiseMonths($departure, $durationDays);
         $alerts = [];
 
-        foreach (HazardZone::query()->get() as $zone) {
+        foreach ($this->candidates($geometry) as $zone) {
             // Pré-filtre par cercle englobant : bon marché, écarte l'immense
             // majorité des zones avant le test polygone précis.
             $distance = $this->distanceToPath($zone->latitude, $zone->longitude, $geometry);
@@ -78,6 +79,44 @@ class RouteHazardService
         });
 
         return $alerts;
+    }
+
+    /**
+     * Réduit les calculs géométriques aux zones dont le centre se trouve dans
+     * la boîte englobante du trajet, élargie du plus grand rayon connu.
+     *
+     * @param  non-empty-list<array{latitude: float, longitude: float}>  $geometry
+     * @return Collection<int, HazardZone>
+     */
+    private function candidates(array $geometry): Collection
+    {
+        $latitudes = array_column($geometry, 'latitude');
+        $longitudes = array_column($geometry, 'longitude');
+        $paddingNm = (float) HazardZone::query()->max('radius_nm') + self::NEARBY_MARGIN_NM;
+        $latitudePadding = $paddingNm / 60;
+        $middleLatitude = (min($latitudes) + max($latitudes)) / 2;
+        $longitudePadding = min(180.0, $paddingNm / max(1.0, 60 * cos(deg2rad($middleLatitude))));
+        $minimumLongitude = min($longitudes);
+        $maximumLongitude = max($longitudes);
+
+        $query = HazardZone::query()->whereBetween('latitude', [
+            max(-90.0, min($latitudes) - $latitudePadding),
+            min(90.0, max($latitudes) + $latitudePadding),
+        ]);
+
+        if ($maximumLongitude - $minimumLongitude <= 180) {
+            $query->whereBetween('longitude', [
+                max(-180.0, $minimumLongitude - $longitudePadding),
+                min(180.0, $maximumLongitude + $longitudePadding),
+            ]);
+        } else {
+            $query->where(function ($query) use ($minimumLongitude, $maximumLongitude, $longitudePadding): void {
+                $query->where('longitude', '<=', min(180.0, $minimumLongitude + $longitudePadding))
+                    ->orWhere('longitude', '>=', max(-180.0, $maximumLongitude - $longitudePadding));
+            });
+        }
+
+        return $query->get();
     }
 
     /**

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\PlanFeature;
+use App\Services\Security\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -13,6 +14,8 @@ use Inertia\Response;
 
 class PricingController extends Controller
 {
+    public function __construct(private readonly AuditLogger $audit) {}
+
     public function index(): Response
     {
         return Inertia::render('admin/pricing', [
@@ -68,6 +71,11 @@ class PricingController extends Controller
             'feature_ids.*' => ['integer', 'exists:plan_features,id'],
         ]);
 
+        $before = [
+            ...$plan->only(['name', 'audience', 'monthly_price_cents', 'yearly_price_cents', 'boat_limit', 'member_limit', 'is_active']),
+            'feature_ids' => $plan->features()->pluck('plan_features.id')->all(),
+        ];
+
         $plan->update([
             'name' => $data['name'],
             'audience' => $data['audience'],
@@ -79,6 +87,10 @@ class PricingController extends Controller
         ]);
 
         $plan->features()->sync($data['feature_ids'] ?? []);
+        $this->audit->record($request, 'admin.plan.updated', $plan, $before, [
+            ...$plan->fresh()->only(['name', 'audience', 'monthly_price_cents', 'yearly_price_cents', 'boat_limit', 'member_limit', 'is_active']),
+            'feature_ids' => $plan->features()->pluck('plan_features.id')->all(),
+        ]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Tarif mis à jour.']);
 

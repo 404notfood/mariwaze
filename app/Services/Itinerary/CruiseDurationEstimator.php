@@ -16,10 +16,10 @@ class CruiseDurationEstimator
      * Durée conseillée, calculée sur la distance maritime réelle et le rythme
      * quotidien associé au style de navigation.
      */
-    public function estimate(string $departure, string $destination, string $style): int
+    public function estimate(string $departure, string $destination, string $style, ?string $departurePlace = null, ?string $destinationPlace = null): int
     {
-        $start = $this->ports->find($departure);
-        $end = $this->ports->find($destination);
+        $start = $this->ports->find($departure, $departurePlace);
+        $end = $this->ports->find($destination, $destinationPlace);
 
         if ($start === null || $end === null) {
             return 7;
@@ -35,23 +35,23 @@ class CruiseDurationEstimator
         return max(2, (int) ceil($this->maritimeMiles($start, $end) / $dailyMiles) + 1);
     }
 
-    /** @param array{latitude: float, longitude: float} $start @param array{latitude: float, longitude: float} $end */
+    /**
+     * @param  array{latitude: float, longitude: float}  $start
+     * @param  array{latitude: float, longitude: float}  $end
+     */
     private function maritimeMiles(array $start, array $end): float
     {
         try {
             $route = $this->router->route($start, $end);
             $miles = 0.0;
 
-            foreach (array_chunk($route, 2, true) as $segment) {
-                $segment = array_values($segment);
-                if (count($segment) === 2) {
-                    $miles += $this->nauticalMiles(
-                        $segment[0]['latitude'],
-                        $segment[0]['longitude'],
-                        $segment[1]['latitude'],
-                        $segment[1]['longitude'],
-                    );
-                }
+            for ($index = 1; $index < count($route); $index++) {
+                $miles += $this->nauticalMiles(
+                    $route[$index - 1]['latitude'],
+                    $route[$index - 1]['longitude'],
+                    $route[$index]['latitude'],
+                    $route[$index]['longitude'],
+                );
             }
 
             return $miles;
@@ -67,10 +67,5 @@ class CruiseDurationEstimator
         $a = sin($latitude / 2) ** 2 + cos(deg2rad($latitudeA)) * cos(deg2rad($latitudeB)) * sin($longitude / 2) ** 2;
 
         return 3440.065 * 2 * atan2(sqrt($a), sqrt(1 - $a));
-    }
-
-    private function normalize(string $value): string
-    {
-        return str($value)->ascii()->lower()->replace(' ', '-')->trim()->toString();
     }
 }

@@ -1,6 +1,10 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { Save, ShieldCheck, UserRound } from 'lucide-react';
+import Save from 'lucide-react/icons/save';
+import ShieldCheck from 'lucide-react/icons/shield-check';
+import UserRound from 'lucide-react/icons/user-round';
 import { useState } from 'react';
+import { Pagination } from '@/components/admin/pagination';
+import type { PaginationLink } from '@/components/admin/pagination';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
@@ -25,7 +29,11 @@ type ManagedUser = {
 };
 
 type Props = {
-    users: ManagedUser[];
+    users: {
+        data: ManagedUser[];
+        total: number;
+        links: PaginationLink[];
+    };
 };
 
 export default function AdminUsers({ users }: Props) {
@@ -40,7 +48,7 @@ export default function AdminUsers({ users }: Props) {
                         description="Attribuez les accès d'administration de la plateforme."
                     />
                     <Badge variant="outline" className="w-fit">
-                        {users.length} compte{users.length > 1 ? 's' : ''}
+                        {users.total} compte{users.total > 1 ? 's' : ''}
                     </Badge>
                 </div>
 
@@ -53,11 +61,16 @@ export default function AdminUsers({ users }: Props) {
                     </div>
 
                     <div className="divide-y">
-                        {users.map((user) => (
+                        {users.data.map((user) => (
                             <UserRoleRow key={user.id} user={user} />
                         ))}
                     </div>
                 </section>
+
+                <Pagination
+                    links={users.links}
+                    label="Pagination des utilisateurs"
+                />
             </div>
         </>
     );
@@ -104,10 +117,16 @@ function UserRoleRow({ user }: { user: ManagedUser }) {
                 </div>
                 <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                        <p className="truncate text-sm font-medium">{user.name}</p>
-                        {isCurrentUser ? <Badge variant="secondary">Vous</Badge> : null}
+                        <p className="truncate text-sm font-medium">
+                            {user.name}
+                        </p>
+                        {isCurrentUser ? (
+                            <Badge variant="secondary">Vous</Badge>
+                        ) : null}
                     </div>
-                    <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                        {user.email}
+                    </p>
                 </div>
             </div>
 
@@ -116,8 +135,14 @@ function UserRoleRow({ user }: { user: ManagedUser }) {
             </p>
 
             <div>
-                <Select value={role} onValueChange={(value: 'user' | 'admin') => setRole(value)}>
-                    <SelectTrigger className="w-full" aria-label={`Rôle de ${user.name}`}>
+                <Select
+                    value={role}
+                    onValueChange={(value: 'user' | 'admin') => setRole(value)}
+                >
+                    <SelectTrigger
+                        className="w-full"
+                        aria-label={`Rôle de ${user.name}`}
+                    >
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

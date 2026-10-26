@@ -1,5 +1,9 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-react';
+import BookOpen from 'lucide-react/icons/book-open';
+import Folder from 'lucide-react/icons/folder';
+import LayoutGrid from 'lucide-react/icons/layout-grid';
+import Menu from 'lucide-react/icons/menu';
+import Search from 'lucide-react/icons/search';
 import AppLogo from '@/components/app-logo';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { Breadcrumbs } from '@/components/breadcrumbs';

@@ -18,7 +18,7 @@ class WeatherAnalyzer
     public function __construct(private readonly WeatherProviderInterface $weather) {}
 
     /**
-     * @return array{score: int, label: string, detail: string, wind_knots: float|null, wave_height_meters: float|null, available: bool}
+     * @return array{score: int, label: string, detail: string, wind_knots: float|null, wave_height_meters: float|null, available: bool, coverage_percent: int}
      */
     public function scoreLeg(float $latitude, float $longitude, DateTimeInterface $departure, int $hours = 12): array
     {
@@ -32,9 +32,13 @@ class WeatherAnalyzer
             return $this->unavailable();
         }
 
-        $winds = array_filter(array_column($forecast, 'wind_knots'), is_numeric(...));
-        $gusts = array_filter(array_column($forecast, 'gusts_knots'), is_numeric(...));
-        $waves = array_filter(array_column($forecast, 'wave_height_meters'), is_numeric(...));
+        $valid = static fn (mixed $value): bool => is_numeric($value) && is_finite((float) $value) && $value >= 0;
+        $winds = array_filter(array_column($forecast, 'wind_knots'), $valid);
+        $gusts = array_filter(array_column($forecast, 'gusts_knots'), $valid);
+        $waves = array_filter(array_column($forecast, 'wave_height_meters'), $valid);
+        $expected = max(1, $hours);
+        $coverage = (int) floor(100 * (min($expected, count($winds)) + min($expected, count($gusts)) + min($expected, count($waves))) / (3 * $expected));
+        $complete = $coverage === 100;
 
         $maxWind = $winds === [] ? null : max($winds);
         $maxGust = $gusts === [] ? null : max($gusts);
@@ -45,14 +49,20 @@ class WeatherAnalyzer
         $score -= $this->gustPenalty($maxGust);
         $score -= $this->wavePenalty($maxWave);
         $score = max(0, min(100, $score));
+        // L'absence de mesures ne doit jamais améliorer une note. Conserver
+        // toutefois les pénalités des conditions dangereuses déjà connues.
+        if (! $complete) {
+            $score = min(50, $score);
+        }
 
         return [
             'score' => $score,
-            'label' => $this->label($score),
-            'detail' => $this->detail($maxWind, $maxWave),
+            'label' => $complete || $score < 50 ? $this->label($score) : 'À confirmer',
+            'detail' => $this->detail($maxWind, $maxWave).($complete ? '' : ' Prévision incomplète : couverture '.$coverage.' %, à confirmer avant le départ.'),
             'wind_knots' => $maxWind,
             'wave_height_meters' => $maxWave,
-            'available' => true,
+            'available' => $complete,
+            'coverage_percent' => $coverage,
         ];
     }
 
@@ -118,7 +128,7 @@ class WeatherAnalyzer
             : ucfirst(implode(', ', $parts)).'.';
     }
 
-    /** @return array{score: int, label: string, detail: string, wind_knots: null, wave_height_meters: null, available: false} */
+    /** @return array{score: int, label: string, detail: string, wind_knots: null, wave_height_meters: null, available: false, coverage_percent: int} */
     private function unavailable(): array
     {
         return [
@@ -128,6 +138,7 @@ class WeatherAnalyzer
             'wind_knots' => null,
             'wave_height_meters' => null,
             'available' => false,
+            'coverage_percent' => 0,
         ];
     }
 }

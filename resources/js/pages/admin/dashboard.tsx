@@ -1,13 +1,11 @@
 import { Head, Link } from '@inertiajs/react';
-import {
-    ArrowRight,
-    Building2,
-    CreditCard,
-    Map,
-    Settings2,
-    Ship,
-    Users,
-} from 'lucide-react';
+import ArrowRight from 'lucide-react/icons/arrow-right';
+import Building2 from 'lucide-react/icons/building-2';
+import CreditCard from 'lucide-react/icons/credit-card';
+import Map from 'lucide-react/icons/map';
+import Settings2 from 'lucide-react/icons/settings-2';
+import Ship from 'lucide-react/icons/ship';
+import Users from 'lucide-react/icons/users';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -83,7 +81,9 @@ export default function AdminDashboard({ stats, catalog, recentUsers }: Props) {
                     <section className="overflow-hidden rounded-lg border bg-card">
                         <div className="flex items-center justify-between gap-4 border-b px-5 py-4">
                             <div>
-                                <h2 className="font-semibold">Dernières inscriptions</h2>
+                                <h2 className="font-semibold">
+                                    Dernières inscriptions
+                                </h2>
                                 <p className="text-sm text-muted-foreground">
                                     Les comptes créés le plus récemment.
                                 </p>
@@ -112,10 +112,14 @@ export default function AdminDashboard({ stats, catalog, recentUsers }: Props) {
                                     </div>
                                     <div className="shrink-0 text-right">
                                         {user.role === 'admin' ? (
-                                            <Badge variant="secondary">Admin</Badge>
+                                            <Badge variant="secondary">
+                                                Admin
+                                            </Badge>
                                         ) : (
                                             <span className="text-xs text-muted-foreground">
-                                                {dateFormatter.format(new Date(user.created_at))}
+                                                {dateFormatter.format(
+                                                    new Date(user.created_at),
+                                                )}
                                             </span>
                                         )}
                                     </div>
@@ -136,9 +140,18 @@ export default function AdminDashboard({ stats, catalog, recentUsers }: Props) {
                         </div>
 
                         <dl className="mt-5 divide-y border-y">
-                            <CatalogRow label="Offres actives" value={`${catalog.active_plans}/${catalog.plans}`} />
-                            <CatalogRow label="Fonctionnalités" value={String(catalog.features)} />
-                            <CatalogRow label="Options payantes" value={String(catalog.billable_options)} />
+                            <CatalogRow
+                                label="Offres actives"
+                                value={`${catalog.active_plans}/${catalog.plans}`}
+                            />
+                            <CatalogRow
+                                label="Fonctionnalités"
+                                value={String(catalog.features)}
+                            />
+                            <CatalogRow
+                                label="Options payantes"
+                                value={String(catalog.billable_options)}
+                            />
                         </dl>
 
                         <Button className="mt-5 w-full" asChild>

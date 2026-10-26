@@ -9,6 +9,7 @@ use App\Models\Port;
 use Database\Seeders\MaritimeSafetySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use Tests\Concerns\AuthenticatesAccount;
 use Tests\TestCase;
 
 /**
@@ -17,7 +18,7 @@ use Tests\TestCase;
  */
 class MaritimePagesTest extends TestCase
 {
-    use RefreshDatabase;
+    use AuthenticatesAccount, RefreshDatabase;
 
     public function test_the_dashboard_opens_without_any_data(): void
     {
@@ -35,12 +36,16 @@ class MaritimePagesTest extends TestCase
     public function test_the_dashboard_shows_the_real_boat_and_cruise(): void
     {
         $boat = Boat::create([
+            'user_id' => $this->accountUser->id,
+            'organization_id' => $this->accountOrganization->id,
             'name' => 'Éole', 'boat_type' => 'voilier', 'length' => 12.4, 'width' => 3.8,
             'draft' => 2.1, 'avg_speed' => 6.5, 'mast_height' => 18.5,
             'equipment_json' => ['vhf' => true, 'lifejackets' => true],
         ]);
 
         Cruise::create([
+            'user_id' => $this->accountUser->id,
+            'organization_id' => $this->accountOrganization->id,
             'slug' => 'corse-2027', 'title' => 'Tour de Corse',
             'departure_port' => 'Marseille', 'destination_port' => 'Bonifacio',
             'departure_date' => now()->addMonth(), 'duration_days' => 7,
@@ -155,6 +160,8 @@ class MaritimePagesTest extends TestCase
         $this->seed(MaritimeSafetySeeder::class);
 
         Boat::create([
+            'user_id' => $this->accountUser->id,
+            'organization_id' => $this->accountOrganization->id,
             'name' => 'Éole', 'boat_type' => 'voilier', 'length' => 12.4, 'width' => 3.8,
             'draft' => 2.1, 'avg_speed' => 6.5, 'equipment_json' => ['vhf' => true],
         ]);

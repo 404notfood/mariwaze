@@ -1,5 +1,11 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Anchor, Compass, LayoutGrid, Map, Settings2, Shield, Ship } from 'lucide-react';
+import Anchor from 'lucide-react/icons/anchor';
+import Compass from 'lucide-react/icons/compass';
+import LayoutGrid from 'lucide-react/icons/layout-grid';
+import Map from 'lucide-react/icons/map';
+import Settings2 from 'lucide-react/icons/settings-2';
+import Shield from 'lucide-react/icons/shield';
+import Ship from 'lucide-react/icons/ship';
 import AppLogo from '@/components/app-logo';
 import ThemeToggle from '@/components/mariwaze/theme-toggle';
 import { NavFooter } from '@/components/nav-footer';
@@ -27,10 +33,25 @@ export function AppSidebar() {
 
     const mainNavItems: NavItem[] = [
         { title: 'Accueil', href: routes.dashboard, icon: LayoutGrid },
-        { title: 'Mes croisières', href: routes.cruises, icon: Map, matchPrefix: true },
+        {
+            title: 'Mes croisières',
+            href: routes.cruises,
+            icon: Map,
+            matchPrefix: true,
+        },
         { title: 'Carte marine', href: routes.map, icon: Compass },
-        { title: 'Explorer', href: routes.explore, icon: Anchor, matchPrefix: true },
-        { title: 'Mon bateau', href: routes.boat, icon: Ship, matchPrefix: true },
+        {
+            title: 'Explorer',
+            href: routes.explore,
+            icon: Anchor,
+            matchPrefix: true,
+        },
+        {
+            title: 'Mon bateau',
+            href: routes.boat,
+            icon: Ship,
+            matchPrefix: true,
+        },
         { title: 'Sécurité', href: routes.security, icon: Shield },
         ...(auth.can_admin
             ? [

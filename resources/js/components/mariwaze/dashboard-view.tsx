@@ -1,15 +1,13 @@
 import { Link } from '@inertiajs/react';
-import {
-    AlertTriangle,
-    Anchor,
-    ArrowRight,
-    Bell,
-    Compass,
-    MapPin,
-    Route,
-    Ship,
-    Waves,
-} from 'lucide-react';
+import AlertTriangle from 'lucide-react/icons/alert-triangle';
+import Anchor from 'lucide-react/icons/anchor';
+import ArrowRight from 'lucide-react/icons/arrow-right';
+import Bell from 'lucide-react/icons/bell';
+import Compass from 'lucide-react/icons/compass';
+import MapPin from 'lucide-react/icons/map-pin';
+import Route from 'lucide-react/icons/route';
+import Ship from 'lucide-react/icons/ship';
+import Waves from 'lucide-react/icons/waves';
 import CruiseMap from '@/components/mariwaze/cruise-map';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -71,7 +69,12 @@ export type DashboardData = {
     readiness: number;
     readiness_label: string;
     missing_equipment: string[];
-    alerts: { id: string; type: string; message: string; created_at: string | null }[];
+    alerts: {
+        id: string;
+        type: string;
+        message: string;
+        created_at: string | null;
+    }[];
 };
 
 export default function DashboardView({ data }: { data: DashboardData }) {
@@ -82,8 +85,12 @@ export default function DashboardView({ data }: { data: DashboardData }) {
         <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
             <header className="flex flex-col gap-4 border-b border-border/60 pb-6 md:flex-row md:items-end md:justify-between">
                 <div>
-                    <p className="text-sm text-muted-foreground">Préparation de navigation</p>
-                    <h1 className="mt-1 text-2xl font-bold md:text-3xl">Tableau de bord</h1>
+                    <p className="text-sm text-muted-foreground">
+                        Préparation de navigation
+                    </p>
+                    <h1 className="mt-1 text-2xl font-bold md:text-3xl">
+                        Tableau de bord
+                    </h1>
                     <p className="mt-2 text-sm text-muted-foreground">
                         Vos prochaines décisions, sans données décoratives.
                     </p>
@@ -108,7 +115,9 @@ export default function DashboardView({ data }: { data: DashboardData }) {
                             <div>
                                 <p>{alert.message}</p>
                                 {alert.created_at && (
-                                    <p className="text-xs text-muted-foreground">{alert.created_at}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {alert.created_at}
+                                    </p>
                                 )}
                             </div>
                         </div>
@@ -129,21 +138,36 @@ export default function DashboardView({ data }: { data: DashboardData }) {
 
                     <Card className="border-border/60">
                         <CardHeader className="pb-3">
-                            <Badge variant="secondary" className="mb-2 w-fit bg-sand/50">
+                            <Badge
+                                variant="secondary"
+                                className="mb-2 w-fit bg-sand/50"
+                            >
                                 {cruise.status}
                             </Badge>
-                            <CardTitle className="text-xl">{cruise.title}</CardTitle>
+                            <CardTitle className="text-xl">
+                                {cruise.title}
+                            </CardTitle>
                             <CardDescription className="flex items-center gap-1 text-base">
                                 <MapPin className="size-4" />
-                                {cruise.departure_port} → {cruise.destination_port}
+                                {cruise.departure_port} →{' '}
+                                {cruise.destination_port}
                             </CardDescription>
                         </CardHeader>
 
                         <CardContent className="space-y-5">
                             <div className="grid grid-cols-2 gap-4 border-y border-border/60 py-4 text-sm">
-                                <Metric label="Départ" value={cruise.departure_date ?? 'À définir'} />
-                                <Metric label="Durée" value={`${cruise.duration_days} jours`} />
-                                <Metric label="Équipage" value={`${cruise.crew_count} personnes`} />
+                                <Metric
+                                    label="Départ"
+                                    value={cruise.departure_date ?? 'À définir'}
+                                />
+                                <Metric
+                                    label="Durée"
+                                    value={`${cruise.duration_days} jours`}
+                                />
+                                <Metric
+                                    label="Équipage"
+                                    value={`${cruise.crew_count} personnes`}
+                                />
                                 <Metric label="Style" value={cruise.style} />
                             </div>
 
@@ -154,7 +178,9 @@ export default function DashboardView({ data }: { data: DashboardData }) {
                                             <p className="text-xs text-muted-foreground">
                                                 Itinéraire retenu
                                             </p>
-                                            <p className="font-semibold">{cruise.route.label}</p>
+                                            <p className="font-semibold">
+                                                {cruise.route.label}
+                                            </p>
                                         </div>
                                         {cruise.route.score !== null && (
                                             <Badge className="bg-sea-blue/15 text-sea-blue dark:text-lagoon">
@@ -163,17 +189,22 @@ export default function DashboardView({ data }: { data: DashboardData }) {
                                         )}
                                     </div>
                                     <p className="text-sm text-muted-foreground">
-                                        {cruise.route.distance_nm} milles · {cruise.route.stops} escales
+                                        {cruise.route.distance_nm} milles ·{' '}
+                                        {cruise.route.stops} escales
                                     </p>
                                 </div>
                             ) : (
                                 <p className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <Route className="size-4" />
-                                    Aucun itinéraire calculé pour l&apos;instant.
+                                    Aucun itinéraire calculé pour
+                                    l&apos;instant.
                                 </p>
                             )}
 
-                            <Button asChild className="w-full bg-sea-blue hover:bg-sea-blue/90">
+                            <Button
+                                asChild
+                                className="w-full bg-sea-blue hover:bg-sea-blue/90"
+                            >
                                 <Link href={routes.cruise(cruise.slug)}>
                                     Préparer l’itinéraire
                                     <ArrowRight className="size-4" />
@@ -187,12 +218,17 @@ export default function DashboardView({ data }: { data: DashboardData }) {
                     <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-sea-blue/10 text-sea-blue">
                         <Route className="size-6" />
                     </div>
-                    <h2 className="mt-4 text-xl font-semibold">Aucune croisière planifiée</h2>
+                    <h2 className="mt-4 text-xl font-semibold">
+                        Aucune croisière planifiée
+                    </h2>
                     <p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">
-                        Créez un trajet pour afficher sa carte, ses escales, son budget et ses conditions de
-                        navigation.
+                        Créez un trajet pour afficher sa carte, ses escales, son
+                        budget et ses conditions de navigation.
                     </p>
-                    <Button asChild className="mt-5 bg-sea-blue hover:bg-sea-blue/90">
+                    <Button
+                        asChild
+                        className="mt-5 bg-sea-blue hover:bg-sea-blue/90"
+                    >
                         <Link href="/croisieres/nouvelle">
                             Créer une croisière
                             <ArrowRight className="size-4" />
@@ -204,7 +240,9 @@ export default function DashboardView({ data }: { data: DashboardData }) {
             {cruise && cruise.next_legs.length > 0 && (
                 <Card className="border-border/60">
                     <CardHeader>
-                        <CardTitle className="text-base">Prochaines étapes</CardTitle>
+                        <CardTitle className="text-base">
+                            Prochaines étapes
+                        </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
                         {cruise.next_legs.map((leg) => (
@@ -225,8 +263,12 @@ export default function DashboardView({ data }: { data: DashboardData }) {
                                 </div>
                                 {leg.weather && (
                                     <div className="text-right">
-                                        <p className="font-medium">{leg.weather.label}</p>
-                                        <p className="text-xs text-muted-foreground">{leg.weather.detail}</p>
+                                        <p className="font-medium">
+                                            {leg.weather.label}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {leg.weather.detail}
+                                        </p>
                                     </div>
                                 )}
                             </div>
@@ -248,15 +290,26 @@ export default function DashboardView({ data }: { data: DashboardData }) {
                         {boat ? (
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
-                                    <p className="text-lg font-semibold">{boat.name}</p>
-                                    <p className="text-sm text-muted-foreground">{boat.model || boat.type}</p>
+                                    <p className="text-lg font-semibold">
+                                        {boat.name}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                        {boat.model || boat.type}
+                                    </p>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-                                    <Metric label="Tirant d’eau" value={`${boat.draft} m`} />
+                                    <Metric
+                                        label="Tirant d’eau"
+                                        value={`${boat.draft} m`}
+                                    />
                                     <Metric
                                         label="Mât"
-                                        value={boat.mast_height ? `${boat.mast_height} m` : 'Non renseigné'}
+                                        value={
+                                            boat.mast_height
+                                                ? `${boat.mast_height} m`
+                                                : 'Non renseigné'
+                                        }
                                     />
                                 </div>
 
@@ -270,8 +323,8 @@ export default function DashboardView({ data }: { data: DashboardData }) {
                         ) : (
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <p className="text-sm text-muted-foreground">
-                                    Ajoutez les caractéristiques qui sécurisent le choix des ports et
-                                    mouillages.
+                                    Ajoutez les caractéristiques qui sécurisent
+                                    le choix des ports et mouillages.
                                 </p>
                                 <Button asChild variant="outline">
                                     <Link href={routes.boatSetup}>
@@ -295,8 +348,12 @@ export default function DashboardView({ data }: { data: DashboardData }) {
                     <CardContent className="space-y-3 text-sm">
                         <div className="border-b border-border/60 pb-3">
                             <div className="flex items-center justify-between">
-                                <span className="text-muted-foreground">Équipement sécurité</span>
-                                <span className="font-semibold">{data.readiness}%</span>
+                                <span className="text-muted-foreground">
+                                    Équipement sécurité
+                                </span>
+                                <span className="font-semibold">
+                                    {data.readiness}%
+                                </span>
                             </div>
                             {data.missing_equipment.length > 0 && (
                                 <p className="mt-1 flex items-start gap-1 text-xs text-safety-orange">

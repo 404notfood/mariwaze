@@ -103,7 +103,11 @@ export default function Register({ passwordRules }: Props) {
 
                         <div className="text-center text-sm text-muted-foreground">
                             Déjà un compte ?{' '}
-                            <TextLink href={login()} tabIndex={6} className="text-sea-blue">
+                            <TextLink
+                                href={login()}
+                                tabIndex={6}
+                                className="text-sea-blue"
+                            >
                                 Se connecter
                             </TextLink>
                         </div>
@@ -116,5 +120,6 @@ export default function Register({ passwordRules }: Props) {
 
 Register.layout = {
     title: 'Rejoindre MariWaze',
-    description: 'Créez votre compte et commencez à préparer votre prochaine croisière.',
+    description:
+        'Créez votre compte et commencez à préparer votre prochaine croisière.',
 };

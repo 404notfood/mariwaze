@@ -1,13 +1,11 @@
 import { Head, router } from '@inertiajs/react';
-import {
-    Check,
-    CircleDollarSign,
-    Euro,
-    Save,
-    Settings2,
-    Ship,
-    Users,
-} from 'lucide-react';
+import Check from 'lucide-react/icons/check';
+import CircleDollarSign from 'lucide-react/icons/circle-dollar-sign';
+import Euro from 'lucide-react/icons/euro';
+import Save from 'lucide-react/icons/save';
+import Settings2 from 'lucide-react/icons/settings-2';
+import Ship from 'lucide-react/icons/ship';
+import Users from 'lucide-react/icons/users';
 import type { FormEvent, ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 import Heading from '@/components/heading';
@@ -80,7 +78,8 @@ const priceFormatter = new Intl.NumberFormat('fr-FR', {
 
 export default function AdminPricing({ plans, features }: Props) {
     const [selectedPlanId, setSelectedPlanId] = useState(plans[0]?.id ?? null);
-    const selectedPlan = plans.find((plan) => plan.id === selectedPlanId) ?? plans[0];
+    const selectedPlan =
+        plans.find((plan) => plan.id === selectedPlanId) ?? plans[0];
     const activePlans = plans.filter((plan) => plan.is_active).length;
 
     return (
@@ -95,9 +94,18 @@ export default function AdminPricing({ plans, features }: Props) {
                     />
 
                     <div className="flex flex-wrap gap-2">
-                        <SummaryBadge icon={Euro} label={`${plans.length} offres`} />
-                        <SummaryBadge icon={Check} label={`${activePlans} actives`} />
-                        <SummaryBadge icon={Settings2} label={`${features.length} options`} />
+                        <SummaryBadge
+                            icon={Euro}
+                            label={`${plans.length} offres`}
+                        />
+                        <SummaryBadge
+                            icon={Check}
+                            label={`${activePlans} actives`}
+                        />
+                        <SummaryBadge
+                            icon={Settings2}
+                            label={`${features.length} options`}
+                        />
                     </div>
                 </div>
 
@@ -108,12 +116,18 @@ export default function AdminPricing({ plans, features }: Props) {
                             selectedPlanId={selectedPlan.id}
                             onSelect={setSelectedPlanId}
                         />
-                        <PlanEditor key={selectedPlan.id} plan={selectedPlan} features={features} />
+                        <PlanEditor
+                            key={selectedPlan.id}
+                            plan={selectedPlan}
+                            features={features}
+                        />
                     </div>
                 ) : (
                     <div className="rounded-lg border bg-card px-6 py-12 text-center">
                         <CircleDollarSign className="mx-auto size-7 text-muted-foreground" />
-                        <h2 className="mt-3 font-semibold">Aucune offre configurée</h2>
+                        <h2 className="mt-3 font-semibold">
+                            Aucune offre configurée
+                        </h2>
                         <p className="mt-1 text-sm text-muted-foreground">
                             Le catalogue tarifaire est vide.
                         </p>
@@ -159,16 +173,23 @@ function PlanSelector({
                         )}
                     >
                         <span className="flex items-center justify-between gap-2">
-                            <span className="truncate text-sm font-medium">{plan.name}</span>
+                            <span className="truncate text-sm font-medium">
+                                {plan.name}
+                            </span>
                             <span
                                 className={cn(
                                     'size-2 shrink-0 rounded-full',
-                                    plan.is_active ? 'bg-emerald-500' : 'bg-muted-foreground/40',
+                                    plan.is_active
+                                        ? 'bg-emerald-500'
+                                        : 'bg-muted-foreground/40',
                                 )}
                             />
                         </span>
                         <span className="mt-1 block text-xs text-muted-foreground">
-                            {priceFormatter.format(plan.monthly_price_cents / 100)}/mois
+                            {priceFormatter.format(
+                                plan.monthly_price_cents / 100,
+                            )}
+                            /mois
                         </span>
                     </button>
                 ))}
@@ -188,6 +209,7 @@ function PlanEditor({ plan, features }: { plan: Plan; features: Feature[] }) {
         () =>
             features.reduce<Record<string, Feature[]>>((groups, feature) => {
                 (groups[feature.category] ??= []).push(feature);
+
                 return groups;
             }, {}),
         [features],
@@ -235,16 +257,23 @@ function PlanEditor({ plan, features }: { plan: Plan; features: Feature[] }) {
     };
 
     return (
-        <form onSubmit={submit} className="overflow-hidden rounded-lg border bg-card">
+        <form
+            onSubmit={submit}
+            className="overflow-hidden rounded-lg border bg-card"
+        >
             <header className="flex flex-col gap-4 border-b px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                        <h2 className="truncate text-lg font-semibold">{plan.name}</h2>
+                        <h2 className="truncate text-lg font-semibold">
+                            {plan.name}
+                        </h2>
                         <Badge variant={form.is_active ? 'default' : 'outline'}>
                             {form.is_active ? 'Active' : 'Masquée'}
                         </Badge>
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground">Identifiant : {plan.slug}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        Identifiant : {plan.slug}
+                    </p>
                 </div>
                 <Button disabled={!changed || processing} className="sm:w-auto">
                     <Save className="size-4" />
@@ -261,22 +290,31 @@ function PlanEditor({ plan, features }: { plan: Plan; features: Feature[] }) {
                         <Field label="Nom de l'offre" error={errors.name}>
                             <Input
                                 value={form.name}
-                                onChange={(event) => setForm({ ...form, name: event.target.value })}
+                                onChange={(event) =>
+                                    setForm({
+                                        ...form,
+                                        name: event.target.value,
+                                    })
+                                }
                             />
                         </Field>
                         <Field label="Audience" error={errors.audience}>
                             <Select
                                 value={form.audience}
-                                onValueChange={(audience: PlanForm['audience']) =>
-                                    setForm({ ...form, audience })
-                                }
+                                onValueChange={(
+                                    audience: PlanForm['audience'],
+                                ) => setForm({ ...form, audience })}
                             >
                                 <SelectTrigger className="w-full">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="personal">Particuliers</SelectItem>
-                                    <SelectItem value="business">Professionnels / loueurs</SelectItem>
+                                    <SelectItem value="personal">
+                                        Particuliers
+                                    </SelectItem>
+                                    <SelectItem value="business">
+                                        Professionnels / loueurs
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
                         </Field>
@@ -286,13 +324,19 @@ function PlanEditor({ plan, features }: { plan: Plan; features: Feature[] }) {
                         <Checkbox
                             checked={form.is_active}
                             onCheckedChange={(checked) =>
-                                setForm({ ...form, is_active: checked === true })
+                                setForm({
+                                    ...form,
+                                    is_active: checked === true,
+                                })
                             }
                         />
                         <span>
-                            <span className="block font-medium">Offre visible</span>
+                            <span className="block font-medium">
+                                Offre visible
+                            </span>
                             <span className="text-xs text-muted-foreground">
-                                L'offre peut être présentée aux nouveaux abonnés.
+                                L'offre peut être présentée aux nouveaux
+                                abonnés.
                             </span>
                         </span>
                     </label>
@@ -303,29 +347,44 @@ function PlanEditor({ plan, features }: { plan: Plan; features: Feature[] }) {
                     description="Montants affichés en euros, taxes comprises."
                 >
                     <div className="grid gap-4 md:grid-cols-2">
-                        <Field label="Prix mensuel" error={errors.monthly_price_cents} suffix="€">
+                        <Field
+                            label="Prix mensuel"
+                            error={errors.monthly_price_cents}
+                            suffix="€"
+                        >
                             <Input
                                 inputMode="decimal"
                                 value={form.monthly_price_euros}
                                 onChange={(event) =>
-                                    setForm({ ...form, monthly_price_euros: event.target.value })
+                                    setForm({
+                                        ...form,
+                                        monthly_price_euros: event.target.value,
+                                    })
                                 }
                             />
                         </Field>
-                        <Field label="Prix annuel" error={errors.yearly_price_cents} suffix="€">
+                        <Field
+                            label="Prix annuel"
+                            error={errors.yearly_price_cents}
+                            suffix="€"
+                        >
                             <Input
                                 inputMode="decimal"
                                 placeholder="Aucun tarif annuel"
                                 value={form.yearly_price_euros}
                                 onChange={(event) =>
-                                    setForm({ ...form, yearly_price_euros: event.target.value })
+                                    setForm({
+                                        ...form,
+                                        yearly_price_euros: event.target.value,
+                                    })
                                 }
                             />
                         </Field>
                     </div>
                     {yearlySaving !== null && yearlySaving > 0 ? (
                         <p className="mt-3 text-sm text-emerald-700 dark:text-emerald-400">
-                            L'abonnement annuel économise {priceFormatter.format(yearlySaving)} par an.
+                            L'abonnement annuel économise{' '}
+                            {priceFormatter.format(yearlySaving)} par an.
                         </p>
                     ) : null}
                 </EditorSection>
@@ -335,22 +394,40 @@ function PlanEditor({ plan, features }: { plan: Plan; features: Feature[] }) {
                     description="Laissez un champ vide pour ne pas appliquer de limite."
                 >
                     <div className="grid gap-4 md:grid-cols-2">
-                        <Field label="Nombre de bateaux" error={errors.boat_limit} icon={Ship}>
+                        <Field
+                            label="Nombre de bateaux"
+                            error={errors.boat_limit}
+                            icon={Ship}
+                        >
                             <Input
                                 type="number"
                                 min="1"
                                 placeholder="Illimité"
                                 value={form.boat_limit}
-                                onChange={(event) => setForm({ ...form, boat_limit: event.target.value })}
+                                onChange={(event) =>
+                                    setForm({
+                                        ...form,
+                                        boat_limit: event.target.value,
+                                    })
+                                }
                             />
                         </Field>
-                        <Field label="Nombre de membres" error={errors.member_limit} icon={Users}>
+                        <Field
+                            label="Nombre de membres"
+                            error={errors.member_limit}
+                            icon={Users}
+                        >
                             <Input
                                 type="number"
                                 min="1"
                                 placeholder="Illimité"
                                 value={form.member_limit}
-                                onChange={(event) => setForm({ ...form, member_limit: event.target.value })}
+                                onChange={(event) =>
+                                    setForm({
+                                        ...form,
+                                        member_limit: event.target.value,
+                                    })
+                                }
                             />
                         </Field>
                     </div>
@@ -361,42 +438,62 @@ function PlanEditor({ plan, features }: { plan: Plan; features: Feature[] }) {
                     description={`${form.feature_ids.length} option${form.feature_ids.length > 1 ? 's' : ''} incluse${form.feature_ids.length > 1 ? 's' : ''} dans cette offre.`}
                 >
                     <div className="space-y-5">
-                        {Object.entries(featureGroups).map(([category, categoryFeatures]) => (
-                            <div key={category}>
-                                <p className="mb-2 text-xs font-medium text-muted-foreground uppercase">
-                                    {categoryLabels[category] ?? category}
-                                </p>
-                                <div className="grid gap-2 lg:grid-cols-2">
-                                    {categoryFeatures.map((feature) => {
-                                        const checked = form.feature_ids.includes(feature.id);
-                                        return (
-                                            <label
-                                                key={feature.id}
-                                                className={cn(
-                                                    'flex cursor-pointer items-start gap-3 rounded-md border p-3 text-sm transition-colors',
-                                                    checked ? 'border-primary/50 bg-primary/5' : 'hover:bg-accent/40',
-                                                )}
-                                            >
-                                                <Checkbox checked={checked} onCheckedChange={() => toggleFeature(feature.id)} />
-                                                <span className="min-w-0">
-                                                    <span className="flex flex-wrap items-center gap-2 font-medium">
-                                                        {feature.name}
-                                                        {feature.is_billable_option ? (
-                                                            <Badge variant="outline">Option payante</Badge>
+                        {Object.entries(featureGroups).map(
+                            ([category, categoryFeatures]) => (
+                                <div key={category}>
+                                    <p className="mb-2 text-xs font-medium text-muted-foreground uppercase">
+                                        {categoryLabels[category] ?? category}
+                                    </p>
+                                    <div className="grid gap-2 lg:grid-cols-2">
+                                        {categoryFeatures.map((feature) => {
+                                            const checked =
+                                                form.feature_ids.includes(
+                                                    feature.id,
+                                                );
+
+                                            return (
+                                                <label
+                                                    key={feature.id}
+                                                    className={cn(
+                                                        'flex cursor-pointer items-start gap-3 rounded-md border p-3 text-sm transition-colors',
+                                                        checked
+                                                            ? 'border-primary/50 bg-primary/5'
+                                                            : 'hover:bg-accent/40',
+                                                    )}
+                                                >
+                                                    <Checkbox
+                                                        checked={checked}
+                                                        onCheckedChange={() =>
+                                                            toggleFeature(
+                                                                feature.id,
+                                                            )
+                                                        }
+                                                    />
+                                                    <span className="min-w-0">
+                                                        <span className="flex flex-wrap items-center gap-2 font-medium">
+                                                            {feature.name}
+                                                            {feature.is_billable_option ? (
+                                                                <Badge variant="outline">
+                                                                    Option
+                                                                    payante
+                                                                </Badge>
+                                                            ) : null}
+                                                        </span>
+                                                        {feature.description ? (
+                                                            <span className="mt-1 block text-xs text-muted-foreground">
+                                                                {
+                                                                    feature.description
+                                                                }
+                                                            </span>
                                                         ) : null}
                                                     </span>
-                                                    {feature.description ? (
-                                                        <span className="mt-1 block text-xs text-muted-foreground">
-                                                            {feature.description}
-                                                        </span>
-                                                    ) : null}
-                                                </span>
-                                            </label>
-                                        );
-                                    })}
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ),
+                        )}
                     </div>
                 </EditorSection>
             </div>
@@ -410,7 +507,9 @@ function toForm(plan: Plan): PlanForm {
         audience: plan.audience,
         monthly_price_euros: formatEditablePrice(plan.monthly_price_cents),
         yearly_price_euros:
-            plan.yearly_price_cents === null ? '' : formatEditablePrice(plan.yearly_price_cents),
+            plan.yearly_price_cents === null
+                ? ''
+                : formatEditablePrice(plan.yearly_price_cents),
         boat_limit: plan.boat_limit?.toString() ?? '',
         member_limit: plan.member_limit?.toString() ?? '',
         is_active: plan.is_active,
@@ -423,13 +522,18 @@ function formatEditablePrice(cents: number): string {
 }
 
 function parseEuro(value: string): number | null {
-    if (value.trim() === '') return null;
+    if (value.trim() === '') {
+        return null;
+    }
+
     const parsed = Number(value.replace(',', '.'));
+
     return Number.isFinite(parsed) ? parsed : null;
 }
 
 function eurosToCents(value: string): number | null {
     const parsed = parseEuro(value);
+
     return parsed === null ? null : Math.round(parsed * 100);
 }
 
@@ -446,7 +550,9 @@ function EditorSection({
         <section className="grid gap-5 px-5 py-6 lg:grid-cols-[220px_minmax(0,1fr)]">
             <div>
                 <h3 className="text-sm font-semibold">{title}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                    {description}
+                </p>
             </div>
             <div>{children}</div>
         </section>
@@ -469,7 +575,9 @@ function Field({
     return (
         <div className="grid gap-2">
             <Label className="flex items-center gap-2">
-                {Icon ? <Icon className="size-4 text-muted-foreground" /> : null}
+                {Icon ? (
+                    <Icon className="size-4 text-muted-foreground" />
+                ) : null}
                 {label}
             </Label>
             <div className="relative [&>input]:pr-9">

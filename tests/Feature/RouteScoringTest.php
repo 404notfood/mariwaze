@@ -52,11 +52,11 @@ class RouteScoringTest extends TestCase
             ['time' => '2026-08-01T08:00', 'wind_knots' => 8.0, 'gusts_knots' => 12.0, 'wave_height_meters' => 0.4],
         ]));
 
-        $calm = $analyzer->scoreLeg(43.0, 5.0, now());
+        $calm = $analyzer->scoreLeg(43.0, 5.0, now(), 1);
 
         $gale = (new WeatherAnalyzer($this->weatherReturning([
             ['time' => '2026-08-01T08:00', 'wind_knots' => 35.0, 'gusts_knots' => 45.0, 'wave_height_meters' => 3.5],
-        ])))->scoreLeg(43.0, 5.0, now());
+        ])))->scoreLeg(43.0, 5.0, now(), 1);
 
         $this->assertSame(100, $calm['score']);
         $this->assertSame('Très favorable', $calm['label']);
@@ -92,6 +92,32 @@ class RouteScoringTest extends TestCase
             RouteScenario::Fast->maxHoursPerDay(),
         );
         $this->assertSame('Découverte', RouteScenario::Discovery->label());
+    }
+
+    public function test_missing_measurements_cannot_produce_a_favorable_score(): void
+    {
+        foreach ([[], ['wind_knots' => 8.0], ['wind_knots' => null, 'gusts_knots' => null, 'wave_height_meters' => null]] as $row) {
+            $score = (new WeatherAnalyzer($this->weatherReturning([$row])))->scoreLeg(43, 5, now(), 1);
+            $this->assertFalse($score['available']);
+            $this->assertSame('À confirmer', $score['label']);
+            $this->assertSame(50, $score['score']);
+            $this->assertLessThan(100, $score['coverage_percent']);
+        }
+    }
+
+    public function test_partial_time_coverage_and_known_dangers_remain_visible(): void
+    {
+        $row = ['time' => '2026-08-01T08:00', 'wind_knots' => 8.0, 'gusts_knots' => 12.0, 'wave_height_meters' => 0.4];
+        $score = (new WeatherAnalyzer($this->weatherReturning([$row])))->scoreLeg(43, 5, now(), 2);
+        $this->assertSame(50, $score['coverage_percent']);
+        $this->assertSame('À confirmer', $score['label']);
+
+        $score = (new WeatherAnalyzer($this->weatherReturning([
+            ['wind_knots' => 40.0, 'gusts_knots' => null, 'wave_height_meters' => 4.0],
+        ])))->scoreLeg(43, 5, now(), 1);
+        $this->assertSame(0, $score['score']);
+        $this->assertSame('Déconseillé', $score['label']);
+        $this->assertFalse($score['available']);
     }
 
     /** @param list<array<string, mixed>> $rows */

@@ -1,11 +1,15 @@
 import { Link, usePage } from '@inertiajs/react';
-import { CreditCard, LayoutDashboard, Users } from 'lucide-react';
+import CreditCard from 'lucide-react/icons/credit-card';
+import LayoutDashboard from 'lucide-react/icons/layout-dashboard';
+import MessageSquareWarning from 'lucide-react/icons/message-square-warning';
+import Users from 'lucide-react/icons/users';
 import type { PropsWithChildren } from 'react';
 import { cn } from '@/lib/utils';
 
 const adminNavigation = [
     { title: "Vue d'ensemble", href: '/admin', icon: LayoutDashboard },
     { title: 'Utilisateurs', href: '/admin/utilisateurs', icon: Users },
+    { title: 'Avis', href: '/admin/avis', icon: MessageSquareWarning },
     { title: 'Tarifs et options', href: '/admin/tarifs', icon: CreditCard },
 ];
 

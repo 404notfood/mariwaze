@@ -14,6 +14,7 @@ export default defineConfig({
             fonts: [
                 bunny('Manrope', {
                     weights: [400, 500, 600, 700],
+                    optimizedFallbacks: false,
                 }),
             ],
         }),

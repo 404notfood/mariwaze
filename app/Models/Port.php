@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ReviewStatus;
 use App\Support\GeoScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -70,6 +71,12 @@ class Port extends Model
     public function reviews(): MorphMany
     {
         return $this->morphMany(Review::class, 'reviewable');
+    }
+
+    /** @return MorphMany<Review, $this> */
+    public function publicReviews(): MorphMany
+    {
+        return $this->reviews()->where('status', ReviewStatus::Approved);
     }
 
     /** @return MorphMany<Photo, $this> */

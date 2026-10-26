@@ -9,18 +9,22 @@ use App\Models\User;
 /**
  * Croisière et bateau « courants » d'un utilisateur.
  *
- * En local et en test, les pages restent accessibles sans authentification :
- * on retombe alors sur le dernier enregistrement créé.
+ * Sans utilisateur authentifié, aucune ressource privée n'est résolue.
  */
 class CurrentContext
 {
+    public function __construct(private readonly AccountContext $accounts) {}
+
     public function cruise(?User $user): ?Cruise
     {
-        $query = Cruise::query()->with(['boat', 'selectedRoute.segments']);
-
-        if ($user !== null) {
-            $query->where('user_id', $user->id);
+        if ($user === null) {
+            return null;
         }
+
+        $organization = $this->accounts->currentOrCreate($user);
+        $query = Cruise::query()
+            ->with(['boat', 'selectedRoute.segments'])
+            ->where('organization_id', $organization->id);
 
         return $query->latest()->first();
     }
@@ -31,11 +35,12 @@ class CurrentContext
             return $cruise->boat;
         }
 
-        $query = Boat::query();
-
-        if ($user !== null) {
-            $query->where('user_id', $user->id);
+        if ($user === null) {
+            return null;
         }
+
+        $organization = $this->accounts->currentOrCreate($user);
+        $query = Boat::query()->where('organization_id', $organization->id);
 
         $boat = $query->latest()->first();
 

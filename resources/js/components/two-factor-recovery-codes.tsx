@@ -1,5 +1,8 @@
 import { Form } from '@inertiajs/react';
-import { Eye, EyeOff, LockKeyhole, RefreshCw } from 'lucide-react';
+import Eye from 'lucide-react/icons/eye';
+import EyeOff from 'lucide-react/icons/eye-off';
+import LockKeyhole from 'lucide-react/icons/lock-keyhole';
+import RefreshCw from 'lucide-react/icons/refresh-cw';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import AlertError from '@/components/alert-error';
 import { Button } from '@/components/ui/button';
@@ -57,11 +60,12 @@ export default function TwoFactorRecoveryCodes({
             <CardHeader>
                 <CardTitle className="flex gap-3">
                     <LockKeyhole className="size-4" aria-hidden="true" />
-                    2FA recovery codes
+                    Codes de récupération
                 </CardTitle>
                 <CardDescription>
-                    Recovery codes let you regain access if you lose your 2FA
-                    device. Store them in a secure password manager.
+                    Ces codes permettent de retrouver votre compte si vous
+                    perdez votre appareil. Conservez-les dans un gestionnaire de
+                    mots de passe sécurisé.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -76,7 +80,8 @@ export default function TwoFactorRecoveryCodes({
                             className="size-4"
                             aria-hidden="true"
                         />
-                        {codesAreVisible ? 'Hide' : 'View'} recovery codes
+                        {codesAreVisible ? 'Masquer' : 'Afficher'} les codes de
+                        récupération
                     </Button>
 
                     {canRegenerateCodes && (
@@ -92,7 +97,7 @@ export default function TwoFactorRecoveryCodes({
                                     disabled={processing}
                                     aria-describedby="regenerate-warning"
                                 >
-                                    <RefreshCw /> Regenerate codes
+                                    <RefreshCw /> Renouveler les codes
                                 </Button>
                             )}
                         </Form>
@@ -112,7 +117,7 @@ export default function TwoFactorRecoveryCodes({
                                     ref={codesSectionRef}
                                     className="grid gap-1 rounded-lg bg-muted p-4 font-mono text-sm"
                                     role="list"
-                                    aria-label="Recovery codes"
+                                    aria-label="Codes de récupération"
                                 >
                                     {recoveryCodesList.length ? (
                                         recoveryCodesList.map((code, index) => (
@@ -127,7 +132,7 @@ export default function TwoFactorRecoveryCodes({
                                     ) : (
                                         <div
                                             className="space-y-2"
-                                            aria-label="Loading recovery codes"
+                                            aria-label="Chargement des codes de récupération"
                                         >
                                             {Array.from(
                                                 { length: 8 },
@@ -145,13 +150,13 @@ export default function TwoFactorRecoveryCodes({
 
                                 <div className="text-xs text-muted-foreground select-none">
                                     <p id="regenerate-warning">
-                                        Each recovery code can be used once to
-                                        access your account and will be removed
-                                        after use. If you need more, click{' '}
+                                        Chaque code est utilisable une seule
+                                        fois. Pour remplacer les anciens codes,
+                                        choisissez{' '}
                                         <span className="font-bold">
-                                            Regenerate codes
+                                            Renouveler les codes
                                         </span>{' '}
-                                        above.
+                                        ci-dessus.
                                     </p>
                                 </div>
                             </>

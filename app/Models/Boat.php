@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,8 +11,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Boat extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'user_id',
         'organization_id',
@@ -96,16 +93,19 @@ class Boat extends Model
         return is_array($owned) && (bool) ($owned[$key] ?? false);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return BelongsTo<Organization, $this> */
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
     }
 
+    /** @return HasMany<Cruise, $this> */
     public function cruises(): HasMany
     {
         return $this->hasMany(Cruise::class);

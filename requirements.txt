@@ -1,0 +1,5 @@
+geojson==3.3.0
+global-land-mask==1.0.0
+networkx==3.6.1
+numpy==2.5.1
+searoute==1.6.0

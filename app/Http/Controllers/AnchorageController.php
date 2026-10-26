@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ReviewStatus;
+use App\Http\Requests\ReviewRequest;
 use App\Models\Anchorage;
 use App\Models\Review;
 use App\Services\Accounts\CurrentContext;
@@ -21,9 +23,9 @@ class AnchorageController extends Controller
     public function show(Request $request, string $slug): Response
     {
         $anchorage = Anchorage::query()
-            ->with(['reviews' => fn ($query) => $query->with('user')->latest()->limit(10)])
-            ->withCount(['reviews', 'photos'])
-            ->withAvg('reviews', 'rating')
+            ->with(['publicReviews' => fn ($query) => $query->with('user')->latest()->limit(10)])
+            ->withCount(['publicReviews as reviews_count', 'photos'])
+            ->withAvg('publicReviews as reviews_avg_rating', 'rating')
             ->where('slug', $slug)
             ->firstOrFail();
 
@@ -55,7 +57,7 @@ class AnchorageController extends Controller
                     'score' => $check['score'],
                     'reasons' => $check['reasons'],
                 ],
-                'reviews' => $anchorage->reviews->map(fn (Review $review): array => [
+                'reviews' => $anchorage->publicReviews->map(fn (Review $review): array => [
                     'id' => $review->id,
                     'author' => $review->user === null ? 'Navigateur' : $review->user->name,
                     'rating' => $review->rating,
@@ -66,21 +68,17 @@ class AnchorageController extends Controller
         ]);
     }
 
-    public function storeReview(Request $request, string $slug): RedirectResponse
+    public function storeReview(ReviewRequest $request, string $slug): RedirectResponse
     {
         $anchorage = Anchorage::query()->where('slug', $slug)->firstOrFail();
 
-        $validated = $request->validate([
-            'rating' => ['required', 'integer', 'min:1', 'max:5'],
-            'body' => ['nullable', 'string', 'max:2000'],
-            'visited_on' => ['nullable', 'date', 'before_or_equal:today'],
-        ]);
+        $validated = $request->validated();
 
         $anchorage->reviews()->updateOrCreate(
             ['user_id' => $request->user()->id],
-            $validated,
+            [...$validated, 'status' => ReviewStatus::Pending],
         );
 
-        return back()->with('success', 'Merci pour votre avis.');
+        return back()->with('success', 'Merci. Votre avis sera visible après modération.');
     }
 }

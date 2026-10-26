@@ -54,11 +54,18 @@ export default function MariwazeLogo({
 
     if (href) {
         return (
-            <Link href={href} className={cn('flex items-center gap-3', className)}>
+            <Link
+                href={href}
+                className={cn('flex items-center gap-3', className)}
+            >
                 {content}
             </Link>
         );
     }
 
-    return <div className={cn('flex items-center gap-3', className)}>{content}</div>;
+    return (
+        <div className={cn('flex items-center gap-3', className)}>
+            {content}
+        </div>
+    );
 }

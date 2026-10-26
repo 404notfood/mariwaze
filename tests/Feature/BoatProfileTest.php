@@ -5,11 +5,12 @@ namespace Tests\Feature;
 use App\Models\Boat;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use Tests\Concerns\AuthenticatesAccount;
 use Tests\TestCase;
 
 class BoatProfileTest extends TestCase
 {
-    use RefreshDatabase;
+    use AuthenticatesAccount, RefreshDatabase;
 
     public function test_a_boat_profile_can_be_saved_and_displayed(): void
     {

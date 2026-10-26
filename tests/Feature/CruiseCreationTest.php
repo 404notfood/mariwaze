@@ -5,11 +5,12 @@ namespace Tests\Feature;
 use App\Models\Cruise;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use Tests\Concerns\AuthenticatesAccount;
 use Tests\TestCase;
 
 class CruiseCreationTest extends TestCase
 {
-    use RefreshDatabase;
+    use AuthenticatesAccount, RefreshDatabase;
 
     public function test_a_cruise_can_be_created_and_opened(): void
     {

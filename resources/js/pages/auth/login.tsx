@@ -49,7 +49,9 @@ export default function Login({ status, canResetPassword }: Props) {
 
                             <div className="grid gap-2">
                                 <div className="flex items-center">
-                                    <Label htmlFor="password">Mot de passe</Label>
+                                    <Label htmlFor="password">
+                                        Mot de passe
+                                    </Label>
                                     {canResetPassword && (
                                         <TextLink
                                             href={request()}
@@ -77,7 +79,9 @@ export default function Login({ status, canResetPassword }: Props) {
                                     name="remember"
                                     tabIndex={3}
                                 />
-                                <Label htmlFor="remember">Se souvenir de moi</Label>
+                                <Label htmlFor="remember">
+                                    Se souvenir de moi
+                                </Label>
                             </div>
 
                             <Button
@@ -94,7 +98,11 @@ export default function Login({ status, canResetPassword }: Props) {
 
                         <div className="text-center text-sm text-muted-foreground">
                             Pas encore de compte ?{' '}
-                            <TextLink href={register()} tabIndex={5} className="text-sea-blue">
+                            <TextLink
+                                href={register()}
+                                tabIndex={5}
+                                className="text-sea-blue"
+                            >
                                 Créer un compte
                             </TextLink>
                         </div>
@@ -113,5 +121,6 @@ export default function Login({ status, canResetPassword }: Props) {
 
 Login.layout = {
     title: 'Bon retour à bord',
-    description: 'Connectez-vous pour retrouver vos croisières et votre carnet de bord.',
+    description:
+        'Connectez-vous pour retrouver vos croisières et votre carnet de bord.',
 };

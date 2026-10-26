@@ -1,4 +1,3 @@
-import { Link } from '@inertiajs/react';
 import MariwazeLogo from '@/components/mariwaze/mariwaze-logo';
 import { home } from '@/routes';
 import type { AuthLayoutProps } from '@/types';
@@ -11,8 +10,8 @@ export default function AuthMariwazeLayout({
     return (
         <div className="grid min-h-svh lg:grid-cols-2">
             <aside className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between">
-                <div className="absolute inset-0 mariwaze-gradient-ocean" />
-                <div className="absolute inset-0 mariwaze-pattern-map opacity-80" />
+                <div className="mariwaze-gradient-ocean absolute inset-0" />
+                <div className="mariwaze-pattern-map absolute inset-0 opacity-80" />
                 <svg
                     className="absolute inset-0 h-full w-full opacity-20"
                     xmlns="http://www.w3.org/2000/svg"
@@ -36,16 +35,22 @@ export default function AuthMariwazeLayout({
                 </svg>
 
                 <div className="relative z-10 p-10">
-                    <MariwazeLogo href={home().url} variant="light" showTagline />
+                    <MariwazeLogo
+                        href={home().url}
+                        variant="light"
+                        showTagline
+                    />
                 </div>
 
                 <div className="relative z-10 space-y-6 p-10">
                     <blockquote className="max-w-md space-y-4">
                         <p className="text-2xl leading-snug font-semibold text-white">
-                            « Je prépare une belle aventure en mer, avec un copilote fiable. »
+                            « Je prépare une belle aventure en mer, avec un
+                            copilote fiable. »
                         </p>
                         <footer className="text-sm text-white/70">
-                            L&apos;expérience MariWaze — carnet de navigation intelligent
+                            L&apos;expérience MariWaze — carnet de navigation
+                            intelligent
                         </footer>
                     </blockquote>
 
@@ -71,7 +76,9 @@ export default function AuthMariwazeLayout({
                         <h1 className="text-2xl font-bold tracking-tight text-ocean-navy">
                             {title}
                         </h1>
-                        <p className="text-sm text-muted-foreground">{description}</p>
+                        <p className="text-sm text-muted-foreground">
+                            {description}
+                        </p>
                     </div>
 
                     <div className="rounded-2xl border border-border/60 bg-white p-6 shadow-sm">

@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Anchorage;
+use App\Models\AuditLog;
 use App\Models\Organization;
 use App\Models\Plan;
 use App\Models\PlanFeature;
@@ -84,7 +86,7 @@ class AdminPricingTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('admin/users')
-                ->has('users', 2)
+                ->has('users.data', 2)
             );
     }
 
@@ -94,10 +96,29 @@ class AdminPricingTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($admin)
+            ->withSession(['auth.password_confirmed_at' => time()])
             ->put("/admin/utilisateurs/{$user->id}/role", ['role' => 'admin'])
             ->assertRedirect('/admin/utilisateurs');
 
         $this->assertTrue($user->fresh()->isAdmin());
+        $this->assertDatabaseHas('audit_logs', [
+            'actor_id' => $admin->id,
+            'action' => 'admin.user.role_updated',
+            'subject_id' => $user->id,
+        ]);
+    }
+
+    public function test_sensitive_admin_updates_require_recent_password_confirmation(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create();
+
+        $this->actingAs($admin)
+            ->put("/admin/utilisateurs/{$user->id}/role", ['role' => 'admin'])
+            ->assertRedirect('/user/confirm-password');
+
+        $this->assertFalse($user->fresh()->isAdmin());
+        $this->assertSame(0, AuditLog::query()->count());
     }
 
     public function test_admin_cannot_remove_their_own_access(): void
@@ -105,6 +126,7 @@ class AdminPricingTest extends TestCase
         $admin = User::factory()->admin()->create();
 
         $this->actingAs($admin)
+            ->withSession(['auth.password_confirmed_at' => time()])
             ->from('/admin/utilisateurs')
             ->put("/admin/utilisateurs/{$admin->id}/role", ['role' => 'user'])
             ->assertRedirect('/admin/utilisateurs')
@@ -128,16 +150,18 @@ class AdminPricingTest extends TestCase
             'monthly_price_cents' => 4900,
         ]);
 
-        $this->actingAs($admin)->put("/admin/tarifs/{$plan->id}", [
-            'name' => 'Loueur Premium',
-            'audience' => 'business',
-            'monthly_price_cents' => 5900,
-            'yearly_price_cents' => 59000,
-            'boat_limit' => null,
-            'member_limit' => null,
-            'is_active' => true,
-            'feature_ids' => [$feature->id],
-        ])->assertRedirect('/admin/tarifs');
+        $this->actingAs($admin)
+            ->withSession(['auth.password_confirmed_at' => time()])
+            ->put("/admin/tarifs/{$plan->id}", [
+                'name' => 'Loueur Premium',
+                'audience' => 'business',
+                'monthly_price_cents' => 5900,
+                'yearly_price_cents' => 59000,
+                'boat_limit' => null,
+                'member_limit' => null,
+                'is_active' => true,
+                'feature_ids' => [$feature->id],
+            ])->assertRedirect('/admin/tarifs');
 
         $this->assertDatabaseHas('plans', [
             'id' => $plan->id,
@@ -145,5 +169,53 @@ class AdminPricingTest extends TestCase
             'monthly_price_cents' => 5900,
         ]);
         $this->assertTrue($plan->fresh()->features()->where('slug', 'fleet-management')->exists());
+        $this->assertDatabaseHas('audit_logs', [
+            'actor_id' => $admin->id,
+            'action' => 'admin.plan.updated',
+            'subject_id' => $plan->id,
+        ]);
+    }
+
+    public function test_admin_can_moderate_a_review_and_the_action_is_audited(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $author = User::factory()->create();
+        $anchorage = Anchorage::create([
+            'slug' => 'moderation-test',
+            'name' => 'Mouillage à modérer',
+            'latitude' => 43.2,
+            'longitude' => 5.4,
+            'source' => 'test',
+            'source_ref' => 'moderation-1',
+        ]);
+        $review = $anchorage->reviews()->create([
+            'user_id' => $author->id,
+            'rating' => 5,
+            'body' => 'Avis en attente.',
+        ]);
+
+        $this->actingAs($admin)
+            ->get('/admin/avis')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('admin/reviews')
+                ->where('pendingCount', 1)
+                ->where('reviews.data.0.status', 'pending')
+            );
+
+        $this->withSession(['auth.password_confirmed_at' => time()])
+            ->put("/admin/avis/{$review->id}", ['status' => 'approved'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('reviews', [
+            'id' => $review->id,
+            'status' => 'approved',
+            'moderated_by' => $admin->id,
+        ]);
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => 'admin.review.moderated',
+            'subject_id' => $review->id,
+            'actor_id' => $admin->id,
+        ]);
     }
 }

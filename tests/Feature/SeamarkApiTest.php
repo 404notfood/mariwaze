@@ -4,11 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\Seamark;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\AuthenticatesAccount;
 use Tests\TestCase;
 
 class SeamarkApiTest extends TestCase
 {
-    use RefreshDatabase;
+    use AuthenticatesAccount, RefreshDatabase;
 
     public function test_seamarks_are_returned_within_a_small_viewport(): void
     {

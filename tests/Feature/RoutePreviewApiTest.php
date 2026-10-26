@@ -6,11 +6,12 @@ use App\Services\Navigation\SeaRouteService;
 use Database\Seeders\HazardZoneSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use RuntimeException;
+use Tests\Concerns\AuthenticatesAccount;
 use Tests\TestCase;
 
 class RoutePreviewApiTest extends TestCase
 {
-    use RefreshDatabase;
+    use AuthenticatesAccount, RefreshDatabase;
 
     /** @param array<int, array{latitude: float, longitude: float}> $geometry */
     private function fakeSeaRoute(array $geometry): void

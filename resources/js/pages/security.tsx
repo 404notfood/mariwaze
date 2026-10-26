@@ -1,7 +1,13 @@
 import { Head, Link } from '@inertiajs/react';
-import { AlertTriangle, CheckCircle2, Circle, Phone, Radio, Shield, ShieldAlert } from 'lucide-react';
+import AlertTriangle from 'lucide-react/icons/alert-triangle';
+import CheckCircle2 from 'lucide-react/icons/check-circle-2';
+import Circle from 'lucide-react/icons/circle';
+import Phone from 'lucide-react/icons/phone';
+import Radio from 'lucide-react/icons/radio';
+import Shield from 'lucide-react/icons/shield';
+import ShieldAlert from 'lucide-react/icons/shield-alert';
 import HazardAlerts from '@/components/mariwaze/hazard-alerts';
-import type {HazardAlert} from '@/components/mariwaze/planner-map';
+import type { HazardAlert } from '@/components/mariwaze/planner-map';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -65,16 +71,16 @@ type Props = {
 
 function readinessTone(readiness: number) {
     if (readiness >= 100) {
-return 'text-green-600 dark:text-green-400';
-}
+        return 'text-green-600 dark:text-green-400';
+    }
 
     if (readiness >= 75) {
-return 'text-lagoon';
-}
+        return 'text-lagoon';
+    }
 
     if (readiness >= 40) {
-return 'text-safety-orange';
-}
+        return 'text-safety-orange';
+    }
 
     return 'text-destructive';
 }
@@ -106,9 +112,12 @@ export default function Security({ securityData, cruise }: Props) {
                             <div className="flex items-start gap-3">
                                 <AlertTriangle className="mt-0.5 size-5 shrink-0 text-safety-orange" />
                                 <div>
-                                    <p className="font-medium">Aucun bateau enregistré</p>
+                                    <p className="font-medium">
+                                        Aucun bateau enregistré
+                                    </p>
                                     <p className="text-sm text-muted-foreground">
-                                        L&apos;audit de sécurité s&apos;appuie sur les équipements déclarés à bord.
+                                        L&apos;audit de sécurité s&apos;appuie
+                                        sur les équipements déclarés à bord.
                                     </p>
                                 </div>
                             </div>
@@ -126,10 +135,19 @@ export default function Security({ securityData, cruise }: Props) {
                         <CardContent className="flex flex-col gap-4 pt-6 md:flex-row md:items-center md:justify-between">
                             <div>
                                 <p className="text-sm text-muted-foreground">
-                                    {securityData.boat.name} — équipement réglementaire
+                                    {securityData.boat.name} — équipement
+                                    réglementaire
                                 </p>
-                                <p className="text-2xl font-bold">{securityData.readiness}%</p>
-                                <p className={readinessTone(securityData.readiness)}>{securityData.readiness_label}</p>
+                                <p className="text-2xl font-bold">
+                                    {securityData.readiness}%
+                                </p>
+                                <p
+                                    className={readinessTone(
+                                        securityData.readiness,
+                                    )}
+                                >
+                                    {securityData.readiness_label}
+                                </p>
                             </div>
                             <Badge variant="secondary" className="text-base">
                                 {done}/{required.length} équipements requis
@@ -149,13 +167,16 @@ export default function Security({ securityData, cruise }: Props) {
                         <CardContent>
                             {!securityData.route_available ? (
                                 <p className="text-sm text-muted-foreground">
-                                    Calculez l&apos;itinéraire de la croisière pour analyser les zones traversées
-                                    (zones militaires, interactions orques, piraterie, trafic dense…).
+                                    Calculez l&apos;itinéraire de la croisière
+                                    pour analyser les zones traversées (zones
+                                    militaires, interactions orques, piraterie,
+                                    trafic dense…).
                                 </p>
                             ) : securityData.hazards.length === 0 ? (
                                 <p className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <CheckCircle2 className="size-4 text-green-600" />
-                                    Aucune zone de vigilance connue sur le trajet retenu.
+                                    Aucune zone de vigilance connue sur le
+                                    trajet retenu.
                                 </p>
                             ) : (
                                 <HazardAlerts hazards={securityData.hazards} />
@@ -185,7 +206,9 @@ export default function Security({ securityData, cruise }: Props) {
                 <div className="grid gap-4 lg:grid-cols-2">
                     <Card className="border-border/60">
                         <CardHeader>
-                            <CardTitle className="text-base">Équipement réglementaire</CardTitle>
+                            <CardTitle className="text-base">
+                                Équipement réglementaire
+                            </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2">
                             {required.map((item) => (
@@ -201,7 +224,15 @@ export default function Security({ securityData, cruise }: Props) {
                                     ) : (
                                         <AlertTriangle className="size-4 shrink-0 text-safety-orange" />
                                     )}
-                                    <p className={item.done ? 'text-muted-foreground' : 'font-medium'}>{item.label}</p>
+                                    <p
+                                        className={
+                                            item.done
+                                                ? 'text-muted-foreground'
+                                                : 'font-medium'
+                                        }
+                                    >
+                                        {item.label}
+                                    </p>
                                 </div>
                             ))}
 
@@ -211,13 +242,18 @@ export default function Security({ securityData, cruise }: Props) {
                                         Équipements complémentaires
                                     </p>
                                     {optional.map((item) => (
-                                        <div key={item.key} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm">
+                                        <div
+                                            key={item.key}
+                                            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm"
+                                        >
                                             {item.done ? (
                                                 <CheckCircle2 className="size-4 shrink-0 text-green-600" />
                                             ) : (
                                                 <Circle className="size-4 shrink-0 text-muted-foreground/40" />
                                             )}
-                                            <p className="text-muted-foreground">{item.label}</p>
+                                            <p className="text-muted-foreground">
+                                                {item.label}
+                                            </p>
                                         </div>
                                     ))}
                                 </>
@@ -228,26 +264,39 @@ export default function Security({ securityData, cruise }: Props) {
                     <div className="space-y-4">
                         <Card className="border-border/60">
                             <CardHeader>
-                                <CardTitle className="text-base">Réglementation par pays</CardTitle>
+                                <CardTitle className="text-base">
+                                    Réglementation par pays
+                                </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 {securityData.countries.length === 0 ? (
                                     <p className="text-sm text-muted-foreground">
-                                        Les pays traversés sont déduits de l&apos;itinéraire : calculez la route de
-                                        votre croisière pour adapter la réglementation et les numéros d&apos;urgence.
+                                        Les pays traversés sont déduits de
+                                        l&apos;itinéraire : calculez la route de
+                                        votre croisière pour adapter la
+                                        réglementation et les numéros
+                                        d&apos;urgence.
                                     </p>
                                 ) : (
                                     securityData.countries.map((country) => (
-                                        <div key={country.code} className="rounded-xl border border-border/60 p-4">
+                                        <div
+                                            key={country.code}
+                                            className="rounded-xl border border-border/60 p-4"
+                                        >
                                             <p className="font-semibold">
                                                 {country.flag} {country.name}
                                             </p>
                                             {country.docs.length > 0 && (
                                                 <p className="mt-1 text-xs text-muted-foreground">
-                                                    Documents : {country.docs.join(', ')}
+                                                    Documents :{' '}
+                                                    {country.docs.join(', ')}
                                                 </p>
                                             )}
-                                            {country.rules && <p className="mt-1 text-sm">{country.rules}</p>}
+                                            {country.rules && (
+                                                <p className="mt-1 text-sm">
+                                                    {country.rules}
+                                                </p>
+                                            )}
                                             {country.anchoring_rules && (
                                                 <p className="mt-1 text-sm text-muted-foreground">
                                                     {country.anchoring_rules}
@@ -269,7 +318,8 @@ export default function Security({ securityData, cruise }: Props) {
                             <CardContent className="space-y-3">
                                 {securityData.emergency.length === 0 ? (
                                     <p className="text-sm text-muted-foreground">
-                                        Aucun contact enregistré pour cette zone.
+                                        Aucun contact enregistré pour cette
+                                        zone.
                                     </p>
                                 ) : (
                                     securityData.emergency.map((contact) => (
@@ -278,9 +328,12 @@ export default function Security({ securityData, cruise }: Props) {
                                             className="flex items-start justify-between gap-3 text-sm"
                                         >
                                             <div>
-                                                <p className="font-medium">{contact.label}</p>
+                                                <p className="font-medium">
+                                                    {contact.label}
+                                                </p>
                                                 <p className="text-xs text-muted-foreground">
-                                                    {contact.country_name} — {contact.authority}
+                                                    {contact.country_name} —{' '}
+                                                    {contact.authority}
                                                 </p>
                                             </div>
                                             <div className="text-right">
@@ -295,7 +348,8 @@ export default function Security({ securityData, cruise }: Props) {
                                                 {contact.vhf_channel && (
                                                     <p className="flex items-center justify-end gap-1 font-mono font-bold">
                                                         <Radio className="size-3" />
-                                                        VHF {contact.vhf_channel}
+                                                        VHF{' '}
+                                                        {contact.vhf_channel}
                                                     </p>
                                                 )}
                                             </div>

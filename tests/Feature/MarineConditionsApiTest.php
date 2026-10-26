@@ -2,13 +2,17 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Tests\Concerns\AuthenticatesAccount;
 use Tests\TestCase;
 
 class MarineConditionsApiTest extends TestCase
 {
+    use AuthenticatesAccount, RefreshDatabase;
+
     public function test_it_returns_normalized_marine_conditions(): void
     {
         Cache::flush();

@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'required' => 'Le champ :attribute est obligatoire.',
+    'required_unless' => 'Le champ :attribute est obligatoire sauf si :other vaut :values.',
+    'string' => 'Le champ :attribute doit être un texte.',
+    'email' => 'Saisissez une adresse e-mail valide.',
+    'confirmed' => 'La confirmation du champ :attribute ne correspond pas.',
+    'current_password' => 'Le mot de passe actuel est incorrect.',
+    'unique' => 'Cette valeur du champ :attribute est déjà utilisée.',
+    'exists' => 'La valeur du champ :attribute est introuvable.',
+    'in' => 'La valeur du champ :attribute est invalide.',
+    'enum' => 'Choisissez une valeur valide pour :attribute.',
+    'numeric' => 'Le champ :attribute doit être un nombre.',
+    'integer' => 'Le champ :attribute doit être un nombre entier.',
+    'boolean' => 'Le champ :attribute doit être vrai ou faux.',
+    'date' => 'Saisissez une date valide pour :attribute.',
+    'after_or_equal' => 'La date :attribute doit être égale ou postérieure à :date.',
+    'digits' => 'Le champ :attribute doit contenir :digits chiffres.',
+    'min' => ['string' => 'Le champ :attribute doit contenir au moins :min caractères.', 'numeric' => 'Le champ :attribute doit être supérieur ou égal à :min.'],
+    'max' => ['string' => 'Le champ :attribute ne doit pas dépasser :max caractères.', 'numeric' => 'Le champ :attribute ne doit pas dépasser :max.'],
+    'between' => ['numeric' => 'Le champ :attribute doit être compris entre :min et :max.'],
+    'password' => ['letters' => 'Le mot de passe doit contenir une lettre.', 'mixed' => 'Le mot de passe doit contenir une majuscule et une minuscule.', 'numbers' => 'Le mot de passe doit contenir un chiffre.', 'symbols' => 'Le mot de passe doit contenir un symbole.', 'uncompromised' => 'Ce mot de passe a été compromis. Choisissez-en un autre.'],
+    'attributes' => ['email' => 'adresse e-mail', 'password' => 'mot de passe', 'title' => 'nom de la croisière', 'departure_port' => 'port de départ', 'destination_port' => 'destination', 'departure_date' => 'date de départ', 'duration_days' => 'durée', 'crew_count' => 'équipage', 'name' => 'nom', 'boat_id' => 'bateau', 'navigation_style' => 'style de navigation'],
+];

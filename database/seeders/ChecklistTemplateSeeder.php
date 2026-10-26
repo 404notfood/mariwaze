@@ -42,18 +42,22 @@ class ChecklistTemplateSeeder extends Seeder
                 ['name' => $definition['name'], 'is_active' => true],
             );
 
-            foreach (array_values(array_keys($definition['sections'])) as $sectionIndex => $sectionName) {
+            $sectionPosition = 1;
+
+            foreach ($definition['sections'] as $sectionName => $items) {
                 $section = $template->sections()->updateOrCreate(
                     ['name' => $sectionName],
-                    ['position' => $sectionIndex + 1],
+                    ['position' => $sectionPosition],
                 );
 
-                foreach ($definition['sections'][$sectionName] as $itemIndex => $itemLabel) {
+                foreach ($items as $itemIndex => $itemLabel) {
                     $section->items()->updateOrCreate(
                         ['label' => $itemLabel],
                         ['position' => $itemIndex + 1, 'required' => true],
                     );
                 }
+
+                $sectionPosition++;
             }
         }
     }

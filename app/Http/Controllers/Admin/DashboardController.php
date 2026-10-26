@@ -8,6 +8,7 @@ use App\Models\Cruise;
 use App\Models\Organization;
 use App\Models\Plan;
 use App\Models\PlanFeature;
+use App\Models\Review;
 use App\Models\User;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -22,6 +23,7 @@ class DashboardController extends Controller
                 'organizations' => Organization::query()->count(),
                 'boats' => Boat::query()->count(),
                 'cruises' => Cruise::query()->count(),
+                'pending_reviews' => Review::query()->where('status', 'pending')->count(),
             ],
             'catalog' => [
                 'plans' => Plan::query()->count(),

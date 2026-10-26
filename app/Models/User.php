@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\UserRole;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -33,7 +33,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  */
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
-class User extends Authenticatable implements PasskeyUser
+class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
@@ -58,6 +58,7 @@ class User extends Authenticatable implements PasskeyUser
         return $this->role === UserRole::Admin;
     }
 
+    /** @return BelongsToMany<Organization, $this> */
     public function organizations(): BelongsToMany
     {
         return $this->belongsToMany(Organization::class)
@@ -65,16 +66,19 @@ class User extends Authenticatable implements PasskeyUser
             ->withTimestamps();
     }
 
+    /** @return HasMany<Organization, $this> */
     public function ownedOrganizations(): HasMany
     {
         return $this->hasMany(Organization::class, 'owner_id');
     }
 
+    /** @return HasMany<Boat, $this> */
     public function boats(): HasMany
     {
         return $this->hasMany(Boat::class);
     }
 
+    /** @return HasMany<Cruise, $this> */
     public function cruises(): HasMany
     {
         return $this->hasMany(Cruise::class);

@@ -2,14 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Plan extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'name',
         'slug',
@@ -34,6 +31,7 @@ class Plan extends Model
         ];
     }
 
+    /** @return BelongsToMany<PlanFeature, $this> */
     public function features(): BelongsToMany
     {
         return $this->belongsToMany(PlanFeature::class, 'plan_feature')

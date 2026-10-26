@@ -2,7 +2,9 @@
 
 namespace App\Services\Navigation;
 
+use App\Models\Anchorage;
 use App\Models\PlaceCoordinate;
+use App\Models\Port;
 use Illuminate\Support\Facades\Schema;
 
 class PortCoordinates
@@ -31,8 +33,13 @@ class PortCoordinates
     ];
 
     /** @return array{name: string, latitude: float, longitude: float}|null */
-    public function find(string $name): ?array
+    public function find(string $name, ?string $reference = null): ?array
     {
+        if ($reference !== null) {
+            $place = $this->referenced($reference);
+
+            return $place === null ? null : ['name' => $place->name, 'latitude' => $place->latitude, 'longitude' => $place->longitude];
+        }
         $normalized = $this->normalize($name);
         if (isset(self::LOCATIONS[$normalized])) {
             return self::LOCATIONS[$normalized];
@@ -56,6 +63,15 @@ class PortCoordinates
     public function all(): array
     {
         return array_values(self::LOCATIONS);
+    }
+
+    public function referenced(string $reference): Port|Anchorage|null
+    {
+        if (! preg_match('/^(port|anchorage):([1-9][0-9]*)$/', $reference, $matches)) {
+            return null;
+        }
+
+        return $matches[1] === 'port' ? Port::find($matches[2]) : Anchorage::find($matches[2]);
     }
 
     private function normalize(string $name): string

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\Security\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -14,14 +15,16 @@ use Inertia\Response;
 
 class UserController extends Controller
 {
+    public function __construct(private readonly AuditLogger $audit) {}
+
     public function index(): Response
     {
         return Inertia::render('admin/users', [
             'users' => User::query()
                 ->withCount(['organizations', 'boats'])
                 ->latest()
-                ->limit(100)
-                ->get(['id', 'name', 'email', 'role', 'created_at']),
+                ->paginate(25, ['id', 'name', 'email', 'role', 'created_at'])
+                ->withQueryString(),
         ]);
     }
 
@@ -37,7 +40,11 @@ class UserController extends Controller
             ]);
         }
 
+        $before = ['role' => $user->role->value];
         $user->forceFill(['role' => UserRole::from($data['role'])])->save();
+        $this->audit->record($request, 'admin.user.role_updated', $user, $before, [
+            'role' => $user->role->value,
+        ]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Rôle utilisateur mis à jour.']);
 

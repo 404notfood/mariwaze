@@ -49,6 +49,8 @@ class OpenMeteoMarineService implements WeatherProviderInterface
                     ->json();
 
             } catch (ConnectionException|RequestException $exception) {
+                report($exception);
+
                 throw new MarineConditionsUnavailable('Les données marines sont temporairement indisponibles.', previous: $exception);
             }
 
@@ -127,6 +129,8 @@ class OpenMeteoMarineService implements WeatherProviderInterface
                     ->throw()
                     ->json();
             } catch (ConnectionException|RequestException $exception) {
+                report($exception);
+
                 throw new MarineConditionsUnavailable('Les prévisions marines sont temporairement indisponibles.', previous: $exception);
             }
 

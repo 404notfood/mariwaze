@@ -1,13 +1,11 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import {
-    Anchor,
-    ArrowRight,
-    Compass,
-    Map,
-    Shield,
-    Sparkles,
-    Wind,
-} from 'lucide-react';
+import Anchor from 'lucide-react/icons/anchor';
+import ArrowRight from 'lucide-react/icons/arrow-right';
+import Compass from 'lucide-react/icons/compass';
+import Map from 'lucide-react/icons/map';
+import Shield from 'lucide-react/icons/shield';
+import Sparkles from 'lucide-react/icons/sparkles';
+import Wind from 'lucide-react/icons/wind';
 import MariwazeLogo from '@/components/mariwaze/mariwaze-logo';
 import { Button } from '@/components/ui/button';
 import { dashboard, home, login, register } from '@/routes';
@@ -51,15 +49,25 @@ export default function Welcome() {
                         <MariwazeLogo href={home().url} showTagline />
                         <nav className="flex items-center gap-3">
                             {auth.user ? (
-                                <Button asChild className="bg-sea-blue hover:bg-sea-blue/90">
+                                <Button
+                                    asChild
+                                    className="bg-sea-blue hover:bg-sea-blue/90"
+                                >
                                     <Link href={dashboard()}>Mon espace</Link>
                                 </Button>
                             ) : (
                                 <>
-                                    <Button asChild variant="ghost" className="text-ocean-navy">
+                                    <Button
+                                        asChild
+                                        variant="ghost"
+                                        className="text-ocean-navy"
+                                    >
                                         <Link href={login()}>Connexion</Link>
                                     </Button>
-                                    <Button asChild className="bg-sea-blue hover:bg-sea-blue/90">
+                                    <Button
+                                        asChild
+                                        className="bg-sea-blue hover:bg-sea-blue/90"
+                                    >
                                         <Link href={register()}>Commencer</Link>
                                     </Button>
                                 </>
@@ -69,7 +77,7 @@ export default function Welcome() {
                 </header>
 
                 <section className="relative overflow-hidden">
-                    <div className="absolute inset-0 mariwaze-gradient-ocean opacity-[0.04]" />
+                    <div className="mariwaze-gradient-ocean absolute inset-0 opacity-[0.04]" />
                     <div className="absolute -top-24 -right-24 size-96 rounded-full bg-lagoon/10 blur-3xl" />
                     <div className="absolute -bottom-24 -left-24 size-96 rounded-full bg-sand/30 blur-3xl" />
 
@@ -88,9 +96,10 @@ export default function Welcome() {
                             </h1>
 
                             <p className="max-w-lg text-lg text-muted-foreground">
-                                MariWaze n&apos;est pas un GPS marin. C&apos;est votre carnet de
-                                navigation intelligent : routes, météo, mouillages et sécurité —
-                                pensé par des marins, pour les plaisanciers.
+                                MariWaze n&apos;est pas un GPS marin. C&apos;est
+                                votre carnet de navigation intelligent : routes,
+                                météo, mouillages et sécurité — pensé par des
+                                marins, pour les plaisanciers.
                             </p>
 
                             <div className="flex flex-wrap gap-4">
@@ -99,13 +108,21 @@ export default function Welcome() {
                                     size="lg"
                                     className="bg-sea-blue hover:bg-sea-blue/90"
                                 >
-                                    <Link href={auth.user ? dashboard() : register()}>
-                                        {auth.user ? 'Accéder à mon espace' : 'Créer mon compte'}
+                                    <Link
+                                        href={
+                                            auth.user ? dashboard() : register()
+                                        }
+                                    >
+                                        {auth.user
+                                            ? 'Accéder à mon espace'
+                                            : 'Créer mon compte'}
                                         <ArrowRight className="size-4" />
                                     </Link>
                                 </Button>
                                 <Button asChild size="lg" variant="outline">
-                                    <Link href="/dashboard">Ouvrir l&apos;application</Link>
+                                    <Link href="/dashboard">
+                                        Ouvrir l&apos;application
+                                    </Link>
                                 </Button>
                             </div>
                         </div>
@@ -121,7 +138,8 @@ export default function Welcome() {
                                 Un carnet de voyage numérique
                             </h2>
                             <p className="mt-3 text-muted-foreground">
-                                La technologie vous aide sans prendre la place du marin.
+                                La technologie vous aide sans prendre la place
+                                du marin.
                             </p>
                         </div>
 
@@ -152,17 +170,30 @@ export default function Welcome() {
                             Explorer l&apos;application
                         </h2>
                         <p className="mb-8 text-center text-muted-foreground">
-                            Toutes les pages ci-dessous fonctionnent avec des données fictives
+                            Toutes les pages ci-dessous fonctionnent avec des
+                            données fictives
                         </p>
                         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                             {[
-                                { href: '/dashboard', label: 'Tableau de bord' },
-                                { href: '/croisieres/nouvelle', label: 'Nouvelle croisière' },
+                                {
+                                    href: '/dashboard',
+                                    label: 'Tableau de bord',
+                                },
+                                {
+                                    href: '/croisieres/nouvelle',
+                                    label: 'Nouvelle croisière',
+                                },
                                 { href: '/carte', label: 'Carte marine' },
-                                { href: '/mouillages/cala-macarella', label: 'Fiche mouillage' },
+                                {
+                                    href: '/mouillages/cala-macarella',
+                                    label: 'Fiche mouillage',
+                                },
                                 { href: '/explorer', label: 'Explorer' },
                                 { href: '/bateau', label: 'Mon bateau' },
-                                { href: '/bateau/configurer', label: 'Config. bateau' },
+                                {
+                                    href: '/bateau/configurer',
+                                    label: 'Config. bateau',
+                                },
                                 { href: '/securite', label: 'Sécurité' },
                             ].map((link) => (
                                 <Link
@@ -181,17 +212,21 @@ export default function Welcome() {
                     <div className="mx-auto max-w-3xl px-6 text-center">
                         <Compass className="mx-auto mb-6 size-12 text-lagoon" />
                         <blockquote className="text-2xl leading-relaxed font-medium md:text-3xl">
-                            « Je prépare une belle aventure en mer, avec un copilote fiable. »
+                            « Je prépare une belle aventure en mer, avec un
+                            copilote fiable. »
                         </blockquote>
                         <p className="mt-6 text-white/70">
-                            Rejoignez les navigateurs qui préparent leurs croisières sereinement.
+                            Rejoignez les navigateurs qui préparent leurs
+                            croisières sereinement.
                         </p>
                         <Button
                             asChild
                             size="lg"
                             className="mt-8 bg-white text-ocean-navy hover:bg-white/90"
                         >
-                            <Link href={register()}>Commencer gratuitement</Link>
+                            <Link href={register()}>
+                                Commencer gratuitement
+                            </Link>
                         </Button>
                     </div>
                 </section>
@@ -199,7 +234,9 @@ export default function Welcome() {
                 <footer className="border-t border-border/40 bg-ocean-navy py-8 text-white/60">
                     <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 md:flex-row">
                         <MariwazeLogo variant="light" showTagline />
-                        <p className="text-sm">© 2027 MariWaze — Copilote maritime intelligent</p>
+                        <p className="text-sm">
+                            © 2027 MariWaze — Copilote maritime intelligent
+                        </p>
                     </div>
                 </footer>
             </div>
@@ -220,25 +257,40 @@ function HeroPreviewCard() {
                     <h3 className="mt-1 text-xl font-bold text-ocean-navy">
                         Votre prochaine croisière
                     </h3>
-                    <p className="text-sm text-muted-foreground">Biarritz → Bonifacio</p>
+                    <p className="text-sm text-muted-foreground">
+                        Biarritz → Bonifacio
+                    </p>
 
                     <div className="mt-6 grid grid-cols-3 gap-4 rounded-xl bg-muted/50 p-4 text-center">
                         <div>
-                            <p className="text-2xl font-bold text-sea-blue">350</p>
-                            <p className="text-xs text-muted-foreground">milles</p>
+                            <p className="text-2xl font-bold text-sea-blue">
+                                350
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                milles
+                            </p>
                         </div>
                         <div>
-                            <p className="text-2xl font-bold text-sea-blue">18</p>
-                            <p className="text-xs text-muted-foreground">escales</p>
+                            <p className="text-2xl font-bold text-sea-blue">
+                                18
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                escales
+                            </p>
                         </div>
                         <div>
-                            <p className="text-2xl font-bold text-green-600">92%</p>
-                            <p className="text-xs text-muted-foreground">confiance</p>
+                            <p className="text-2xl font-bold text-green-600">
+                                92%
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                confiance
+                            </p>
                         </div>
                     </div>
 
                     <div className="mt-4 rounded-xl bg-green-500/10 px-4 py-3 text-sm text-green-700">
-                        🟢 Navigation recommandée — Vent favorable pour votre voilier
+                        🟢 Navigation recommandée — Vent favorable pour votre
+                        voilier
                     </div>
 
                     <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">

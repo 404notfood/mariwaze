@@ -14,7 +14,7 @@ class SetUserRole extends Command
 
     public function handle(): int
     {
-        $role = UserRole::tryFrom(strtolower((string) $this->argument('role')));
+        $role = UserRole::tryFrom($this->input()->string('role')->lower()->toString());
 
         if ($role === null) {
             $this->error('Le role doit etre "user" ou "admin".');

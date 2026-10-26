@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ReviewStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -11,6 +12,8 @@ use Illuminate\Support\Carbon;
  * L'auteur est nullable : les avis survivent à la suppression du compte.
  *
  * @property-read Carbon|null $visited_on
+ * @property ReviewStatus $status
+ * @property-read Carbon|null $created_at
  * @property-read User|null $user
  */
 class Review extends Model
@@ -22,6 +25,9 @@ class Review extends Model
         'rating',
         'body',
         'visited_on',
+        'status',
+        'moderated_by',
+        'moderated_at',
     ];
 
     protected function casts(): array
@@ -29,6 +35,8 @@ class Review extends Model
         return [
             'rating' => 'integer',
             'visited_on' => 'date',
+            'status' => ReviewStatus::class,
+            'moderated_at' => 'immutable_datetime',
         ];
     }
 

@@ -8,7 +8,14 @@ export default function MariwazeLogoIcon(props: SVGAttributes<SVGElement>) {
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
         >
-            <circle cx="24" cy="24" r="22" stroke="currentColor" strokeWidth="1.5" opacity="0.25" />
+            <circle
+                cx="24"
+                cy="24"
+                r="22"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                opacity="0.25"
+            />
             <path
                 d="M10 28C14 22 18 20 24 20C30 20 34 22 38 28"
                 stroke="currentColor"

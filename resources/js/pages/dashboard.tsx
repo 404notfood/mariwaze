@@ -1,5 +1,6 @@
 import { Head } from '@inertiajs/react';
-import DashboardView, { type DashboardData } from '@/components/mariwaze/dashboard-view';
+import DashboardView from '@/components/mariwaze/dashboard-view';
+import type { DashboardData } from '@/components/mariwaze/dashboard-view';
 import { appRoutes } from '@/lib/mariwaze-routes';
 
 type Props = {

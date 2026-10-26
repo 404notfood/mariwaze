@@ -13,8 +13,9 @@ class ImportGeoNamesPlaces extends Command
 
     public function handle(): int
     {
-        $path = $this->argument('path') ?: storage_path('app/geodata/'.$this->option('country').'.txt');
-        $country = strtoupper($this->option('country'));
+        $countryOption = $this->input()->string('country')->toString();
+        $path = $this->input()->string('path')->toString() ?: storage_path('app/geodata/'.$countryOption.'.txt');
+        $country = strtoupper($countryOption);
 
         if (! is_file($path)) {
             $this->error("Fichier introuvable : {$path}");

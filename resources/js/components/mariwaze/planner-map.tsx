@@ -1,4 +1,7 @@
+import type * as Leaflet from 'leaflet';
 import { useEffect, useRef } from 'react';
+
+import 'leaflet/dist/leaflet.css';
 
 export type NavigationPoint = {
     name: string;
@@ -39,12 +42,6 @@ type MarineOverlay = {
     wind?: { speed_knots: number | null; direction_degrees: number | null };
 };
 
-declare global {
-    interface Window {
-        L?: any;
-    }
-}
-
 const SEVERITY_COLORS: Record<HazardAlert['severity'], string> = {
     danger: '#dc2626',
     warning: '#ff8c42',
@@ -59,32 +56,62 @@ const POINT_COLORS: Record<NavigationPoint['kind'], string> = {
     point: '#64748b',
 };
 
-function loadLeaflet(): Promise<any> {
-    if (window.L) {
-return Promise.resolve(window.L);
+let leafletPromise: Promise<typeof Leaflet> | null = null;
+
+function loadLeaflet(): Promise<typeof Leaflet> {
+    leafletPromise ??= import('leaflet');
+
+    return leafletPromise;
 }
 
-    return new Promise((resolve, reject) => {
-        if (!document.getElementById('leaflet-style')) {
-            const style = document.createElement('link');
-            style.id = 'leaflet-style'; style.rel = 'stylesheet';
-            style.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-            document.head.appendChild(style);
-        }
+function textLine(text: string, cssText: string): HTMLParagraphElement {
+    const line = document.createElement('p');
+    line.textContent = text;
+    line.style.cssText = cssText;
 
-        const existing = document.getElementById('leaflet-script') as HTMLScriptElement | null;
-
-        if (existing) {
- existing.addEventListener('load', () => resolve(window.L), { once: true });
-
- return; 
+    return line;
 }
 
-        const script = document.createElement('script');
-        script.id = 'leaflet-script'; script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-        script.onload = () => resolve(window.L); script.onerror = reject;
-        document.body.appendChild(script);
-    });
+function hazardPopup(zone: HazardAlert, color: string): HTMLDivElement {
+    const popup = document.createElement('div');
+    popup.style.cssText = 'max-width:240px;font-family:system-ui';
+    const category = textLine(
+        zone.category_label,
+        `margin:0;font-weight:700;color:${color}`,
+    );
+    const name = textLine(zone.name, 'margin:2px 0 0;font-weight:600');
+    const description = textLine(
+        zone.description,
+        'margin:4px 0 0;font-size:12px',
+    );
+    popup.append(category, name, description);
+
+    if (zone.advice) {
+        popup.append(
+            textLine(
+                `Conseil : ${zone.advice}`,
+                'margin:4px 0 0;font-size:12px',
+            ),
+        );
+    }
+
+    if (!zone.in_season) {
+        popup.append(
+            textLine(
+                'Hors saison principale aux dates de la croisière.',
+                'margin:4px 0 0;font-size:11px;color:#64748b',
+            ),
+        );
+    }
+
+    return popup;
+}
+
+function tooltip(text: string): HTMLSpanElement {
+    const element = document.createElement('span');
+    element.textContent = text;
+
+    return element;
 }
 
 function markerHtml(point: NavigationPoint): { html: string; size: number } {
@@ -118,7 +145,15 @@ function markerHtml(point: NavigationPoint): { html: string; size: number } {
     };
 }
 
-export default function PlannerMap({ points, onMapClick, className, marine, routeGeometry, routeAvailable = true, hazards = [] }: {
+export default function PlannerMap({
+    points,
+    onMapClick,
+    className,
+    marine,
+    routeGeometry,
+    routeAvailable = true,
+    hazards = [],
+}: {
     points: NavigationPoint[];
     onMapClick: (point: NavigationPoint) => void;
     className?: string;
@@ -130,104 +165,221 @@ export default function PlannerMap({ points, onMapClick, className, marine, rout
     const element = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        const container = element.current;
+
+        if (!container) {
+            return;
+        }
+
         let map: any;
         let active = true;
+        let detachSeamarks: () => void = () => undefined;
 
-        loadLeaflet().then((L) => {
-            if (!active || !element.current) {
-return;
-}
+        loadLeaflet()
+            .then((L) => {
+                if (!active) {
+                    return;
+                }
 
-            map = L.map(element.current, { zoomControl: true, attributionControl: true, center: [46.7, -2.4], zoom: 6 });
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 18, attribution: '&copy; OpenStreetMap contributors',
-            }).addTo(map);
-            L.control.scale({ imperial: false }).addTo(map);
-
-            // Zones de vigilance, dessinées sous le tracé et les marqueurs.
-            // Contour réel (polygone importé d'OpenSeaMap) quand il existe,
-            // cercle enveloppant sinon.
-            hazards.forEach((zone) => {
-                const color = SEVERITY_COLORS[zone.severity] ?? SEVERITY_COLORS.info;
-                const season = zone.in_season ? '' : '<p style="margin:4px 0 0;font-size:11px;color:#64748b">Hors saison principale aux dates de la croisière.</p>';
-                const style = {
-                    color,
-                    weight: 1.5,
-                    dashArray: zone.geometry && zone.geometry.length >= 3 ? undefined : '6 6',
-                    fillColor: color,
-                    fillOpacity: zone.on_route ? 0.12 : 0.06,
-                    interactive: true,
-                };
-                const shape = zone.geometry && zone.geometry.length >= 3
-                    ? L.polygon(zone.geometry.map((point) => [point.latitude, point.longitude]), style)
-                    : L.circle([zone.latitude, zone.longitude], { ...style, radius: zone.radius_nm * 1852 });
-
-                shape.bindPopup(
-                    `<div style="max-width:240px;font-family:system-ui"><p style="margin:0;font-weight:700;color:${color}">${zone.category_label}</p><p style="margin:2px 0 0;font-weight:600">${zone.name}</p><p style="margin:4px 0 0;font-size:12px">${zone.description}</p>${zone.advice ? `<p style='margin:4px 0 0;font-size:12px'><strong>Conseil :</strong> ${zone.advice}</p>` : ''}${season}</div>`,
+                map = L.map(container, {
+                    zoomAnimation: false,
+                    fadeAnimation: false,
+                    zoomControl: true,
+                    attributionControl: true,
+                    center: [46.7, -2.4],
+                    zoom: 6,
+                });
+                L.tileLayer(
+                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    {
+                        maxZoom: 18,
+                        attribution: '&copy; OpenStreetMap contributors',
+                    },
                 ).addTo(map);
-            });
+                L.control.scale({ imperial: false }).addTo(map);
 
-            attachSeamarkLayer(L, map);
+                // Zones de vigilance, dessinées sous le tracé et les marqueurs.
+                // Contour réel (polygone importé d'OpenSeaMap) quand il existe,
+                // cercle enveloppant sinon.
+                hazards.forEach((zone) => {
+                    const color =
+                        SEVERITY_COLORS[zone.severity] ?? SEVERITY_COLORS.info;
+                    const style = {
+                        color,
+                        weight: 1.5,
+                        dashArray:
+                            zone.geometry && zone.geometry.length >= 3
+                                ? undefined
+                                : '6 6',
+                        fillColor: color,
+                        fillOpacity: zone.on_route ? 0.12 : 0.06,
+                        interactive: true,
+                    };
+                    const shape =
+                        zone.geometry && zone.geometry.length >= 3
+                            ? L.polygon(
+                                  zone.geometry.map((point) => [
+                                      point.latitude,
+                                      point.longitude,
+                                  ]),
+                                  style,
+                              )
+                            : L.circle([zone.latitude, zone.longitude], {
+                                  ...style,
+                                  radius: zone.radius_nm * 1852,
+                              });
 
-            const hasExactRoute = Boolean(routeGeometry && routeGeometry.length > 1);
-            const sailingPath = hasExactRoute ? routeGeometry! : routeAvailable ? points : [];
+                    shape.bindPopup(hazardPopup(zone, color)).addTo(map);
+                });
 
-            if (sailingPath.length > 1) {
-                const path = sailingPath.map((point) => [point.latitude, point.longitude]);
-                // Liseré clair sous la route pour la détacher du fond de carte.
-                L.polyline(path, { color: '#ffffff', weight: 7, opacity: 0.85 }).addTo(map);
-                L.polyline(path, { color: '#1363df', weight: 3.5, ...(hasExactRoute ? {} : { dashArray: '10 8' }) }).addTo(map);
-                map.fitBounds(path, { padding: [40, 40] });
-            } else if (points.length === 1) {
-                map.setView([points[0].latitude, points[0].longitude], 9);
-            } else {
-                map.setView([46.7, -2.4], 6);
-            }
+                detachSeamarks = attachSeamarkLayer(L, map);
 
-            points.forEach((point) => {
-                const { html, size } = markerHtml(point);
-                const kindLabel = { depart: 'Départ', arrivee: 'Arrivée', port: 'Port', mouillage: 'Mouillage', point: 'Étape' }[point.kind];
-                L.marker([point.latitude, point.longitude], {
-                    icon: L.divIcon({ className: 'mariwaze-point-marker', html, iconSize: [size, size], iconAnchor: [size / 2, size / 2] }),
-                })
-                    .bindTooltip(`${point.name} · ${kindLabel}${point.day ? ` (J${point.day})` : ''}`, { direction: 'top', offset: [0, -size / 2] })
-                    .on('click', () => onMapClick(point))
-                    .addTo(map);
-            });
+                const hasExactRoute = Boolean(
+                    routeGeometry && routeGeometry.length > 1,
+                );
+                const sailingPath = hasExactRoute
+                    ? routeGeometry!
+                    : routeAvailable
+                      ? points
+                      : [];
 
-            if (marine?.point && marine.current?.speed_knots !== null && marine.current?.speed_knots !== undefined && marine.current.direction_degrees !== null && marine.current.direction_degrees !== undefined) {
-                addDirectionMarker(L, map, marine.point, marine.current.speed_knots, marine.current.direction_degrees, '#0b68d7', 'Courant');
-            }
+                if (sailingPath.length > 1) {
+                    const path: Leaflet.LatLngTuple[] = sailingPath.map(
+                        (point) => [point.latitude, point.longitude],
+                    );
+                    // Liseré clair sous la route pour la détacher du fond de carte.
+                    L.polyline(path, {
+                        color: '#ffffff',
+                        weight: 7,
+                        opacity: 0.85,
+                    }).addTo(map);
+                    L.polyline(path, {
+                        color: '#1363df',
+                        weight: 3.5,
+                        ...(hasExactRoute ? {} : { dashArray: '10 8' }),
+                    }).addTo(map);
+                    map.fitBounds(path, { padding: [40, 40] });
+                } else if (points.length > 1) {
+                    map.fitBounds(
+                        points.map((point): Leaflet.LatLngTuple => [
+                            point.latitude,
+                            point.longitude,
+                        ]),
+                        { padding: [40, 40], animate: false },
+                    );
+                } else if (points.length === 1) {
+                    map.setView([points[0].latitude, points[0].longitude], 9);
+                } else {
+                    map.setView([46.7, -2.4], 6);
+                }
 
-            const wind = marine?.wind;
+                points.forEach((point) => {
+                    const { html, size } = markerHtml(point);
+                    const kindLabel = {
+                        depart: 'Départ',
+                        arrivee: 'Arrivée',
+                        port: 'Port',
+                        mouillage: 'Mouillage',
+                        point: 'Étape',
+                    }[point.kind];
+                    L.marker([point.latitude, point.longitude], {
+                        icon: L.divIcon({
+                            className: 'mariwaze-point-marker',
+                            html,
+                            iconSize: [size, size],
+                            iconAnchor: [size / 2, size / 2],
+                        }),
+                    })
+                        .bindTooltip(
+                            tooltip(
+                                `${point.name} · ${kindLabel}${point.day ? ` (J${point.day})` : ''}`,
+                            ),
+                            { direction: 'top', offset: [0, -size / 2] },
+                        )
+                        .on('click', () => onMapClick(point))
+                        .addTo(map);
+                });
 
-            if (marine?.point && wind?.speed_knots !== null && wind?.speed_knots !== undefined && wind?.direction_degrees !== null && wind?.direction_degrees !== undefined) {
-                addDirectionMarker(L, map, { ...marine.point, longitude: marine.point.longitude + 0.08 }, wind.speed_knots, wind.direction_degrees + 180, '#8b5cf6', 'Vent');
-            }
+                if (
+                    marine?.point &&
+                    marine.current?.speed_knots !== null &&
+                    marine.current?.speed_knots !== undefined &&
+                    marine.current.direction_degrees !== null &&
+                    marine.current.direction_degrees !== undefined
+                ) {
+                    addDirectionMarker(
+                        L,
+                        map,
+                        marine.point,
+                        marine.current.speed_knots,
+                        marine.current.direction_degrees,
+                        '#0b68d7',
+                        'Courant',
+                    );
+                }
 
-            map.on('click', (event: { latlng: { lat: number; lng: number } }) => onMapClick({
-                name: `Escale ${event.latlng.lat.toFixed(3)}, ${event.latlng.lng.toFixed(3)}`,
-                latitude: event.latlng.lat,
-                longitude: event.latlng.lng,
-                kind: 'point',
-            }));
-        }).catch(() => undefined);
+                const wind = marine?.wind;
+
+                if (
+                    marine?.point &&
+                    wind?.speed_knots !== null &&
+                    wind?.speed_knots !== undefined &&
+                    wind?.direction_degrees !== null &&
+                    wind?.direction_degrees !== undefined
+                ) {
+                    addDirectionMarker(
+                        L,
+                        map,
+                        {
+                            ...marine.point,
+                            longitude: marine.point.longitude + 0.08,
+                        },
+                        wind.speed_knots,
+                        wind.direction_degrees + 180,
+                        '#8b5cf6',
+                        'Vent',
+                    );
+                }
+
+                map.on(
+                    'click',
+                    (event: { latlng: { lat: number; lng: number } }) =>
+                        onMapClick({
+                            name: `Escale ${event.latlng.lat.toFixed(3)}, ${event.latlng.lng.toFixed(3)}`,
+                            latitude: event.latlng.lat,
+                            longitude: event.latlng.lng,
+                            kind: 'point',
+                        }),
+                );
+            })
+            .catch(() => undefined);
 
         return () => {
             active = false;
+            detachSeamarks();
+
             if (map) {
                 map.remove();
-            } else if (element.current && (element.current as any)._leaflet_id) {
-                delete (element.current as any)._leaflet_id;
-                (element.current as any)._leaflet_events = undefined;
+            } else if ((container as any)._leaflet_id) {
+                delete (container as any)._leaflet_id;
+                (container as any)._leaflet_events = undefined;
             }
         };
     }, [points, onMapClick, marine, routeGeometry, routeAvailable, hazards]);
 
-    return <div ref={element} className={className ?? 'h-[58vh] min-h-[420px] w-full bg-muted'} aria-label="Carte interactive de préparation" />;
+    return (
+        <div
+            ref={element}
+            className={className ?? 'h-[58vh] min-h-[420px] w-full bg-muted'}
+            aria-label="Carte interactive de préparation"
+        />
+    );
 }
 
-const SEAMARK_STYLES: Record<string, { bg: string; fg: string; glyph: string }> = {
+const SEAMARK_STYLES: Record<
+    string,
+    { bg: string; fg: string; glyph: string }
+> = {
     cardinal_north: { bg: '#fbbf24', fg: '#000', glyph: 'N' },
     cardinal_south: { bg: '#fbbf24', fg: '#000', glyph: 'S' },
     cardinal_east: { bg: '#fbbf24', fg: '#000', glyph: 'E' },
@@ -245,7 +397,7 @@ const SEAMARK_STYLES: Record<string, { bg: string; fg: string; glyph: string }> 
  * Couche de balisage (cardinales, latérales, phares) chargée dynamiquement
  * dès que le zoom est suffisant pour qu'elle soit lisible.
  */
-function attachSeamarkLayer(L: any, map: any): void {
+function attachSeamarkLayer(L: any, map: any): () => void {
     const layer = L.layerGroup().addTo(map);
     let controller: AbortController | null = null;
 
@@ -266,12 +418,19 @@ function attachSeamarkLayer(L: any, map: any): void {
             east: bounds.getEast().toFixed(4),
         });
 
-        fetch(`/api/seamarks?${query}`, { signal: controller.signal, headers: { Accept: 'application/json' } })
-            .then((response) => response.ok ? response.json() as Promise<SeamarkPin[]> : [])
+        fetch(`/api/seamarks?${query}`, {
+            signal: controller.signal,
+            headers: { Accept: 'application/json' },
+        })
+            .then((response) =>
+                response.ok ? (response.json() as Promise<SeamarkPin[]>) : [],
+            )
             .then((marks) => {
                 layer.clearLayers();
                 marks.forEach((mark) => {
-                    const style = SEAMARK_STYLES[mark.category] ?? SEAMARK_STYLES.special_purpose;
+                    const style =
+                        SEAMARK_STYLES[mark.category] ??
+                        SEAMARK_STYLES.special_purpose;
                     L.marker([mark.latitude, mark.longitude], {
                         icon: L.divIcon({
                             className: 'mariwaze-seamark',
@@ -280,7 +439,12 @@ function attachSeamarkLayer(L: any, map: any): void {
                             iconAnchor: [8, 8],
                         }),
                     })
-                        .bindTooltip(`${mark.name ? `${mark.name} · ` : ''}${mark.label}`, { direction: 'top', offset: [0, -8] })
+                        .bindTooltip(
+                            tooltip(
+                                `${mark.name ? `${mark.name} · ` : ''}${mark.label}`,
+                            ),
+                            { direction: 'top', offset: [0, -8] },
+                        )
                         .addTo(layer);
                 });
             })
@@ -289,14 +453,29 @@ function attachSeamarkLayer(L: any, map: any): void {
 
     map.on('moveend zoomend', refresh);
     refresh();
+
+    return () => {
+        controller?.abort();
+        map.off('moveend zoomend', refresh);
+        layer.remove();
+    };
 }
 
-function addDirectionMarker(L: any, map: any, point: NavigationPoint, speed: number, direction: number, color: string, label: string): void {
+function addDirectionMarker(
+    L: any,
+    map: any,
+    point: NavigationPoint,
+    speed: number,
+    direction: number,
+    color: string,
+    label: string,
+): void {
     L.marker([point.latitude, point.longitude], {
         icon: L.divIcon({
             className: 'marine-direction-marker',
             html: `<div style="display:flex;flex-direction:column;align-items:center;color:${color};font-family:system-ui;font-weight:700;text-shadow:0 1px 2px #fff"><span style="font-size:34px;line-height:28px;transform:rotate(${direction}deg)">↑</span><span style="background:#ffffffdd;border:1px solid ${color};padding:1px 4px;font-size:11px">${label} ${speed.toFixed(1)} nd</span></div>`,
-            iconSize: [82, 52], iconAnchor: [41, 26],
+            iconSize: [82, 52],
+            iconAnchor: [41, 26],
         }),
         interactive: false,
     }).addTo(map);

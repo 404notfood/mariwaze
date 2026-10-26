@@ -8,24 +8,40 @@ use SplPriorityQueue;
 
 class InlandRouteService
 {
-    /** @param array{latitude: float, longitude: float} $origin @param array{latitude: float, longitude: float} $destination
+    /**
+     * @param  array{latitude: float, longitude: float}  $origin
+     * @param  array{latitude: float, longitude: float}  $destination
      * @return array{geometry: array<int, array{latitude: float, longitude: float}>, miles: int, locks: int}|null
      */
     public function route(array $origin, array $destination): ?array
     {
-        $nodes = WaterwayNode::query()->get(['id', 'latitude', 'longitude'])->keyBy('id');
-        if ($nodes->isEmpty()) {
-            return null;
-        }
+        $start = $this->nearestNode($origin);
+        $end = $this->nearestNode($destination);
 
-        $start = $this->nearestNode($nodes->all(), $origin);
-        $end = $this->nearestNode($nodes->all(), $destination);
         if ($start === null || $end === null || $start['distance'] > 5000 || $end['distance'] > 5000) {
             return null;
         }
 
+        $directDistance = $this->meters($origin['latitude'], $origin['longitude'], $destination['latitude'], $destination['longitude']);
+        $padding = max(0.5, min(5.0, ($directDistance / 111000) * 0.25));
+        $latitudeBounds = [min($origin['latitude'], $destination['latitude']) - $padding, max($origin['latitude'], $destination['latitude']) + $padding];
+        $longitudeBounds = [min($origin['longitude'], $destination['longitude']) - $padding, max($origin['longitude'], $destination['longitude']) + $padding];
+
+        $nodeQuery = WaterwayNode::query()
+            ->whereBetween('latitude', $latitudeBounds)
+            ->whereBetween('longitude', $longitudeBounds);
+        $nodes = (clone $nodeQuery)->get(['id', 'latitude', 'longitude'])->keyBy('id');
+
+        if (! $nodes->has($start['id']) || ! $nodes->has($end['id'])) {
+            return null;
+        }
+
         $graph = [];
-        foreach (WaterwayEdge::query()->get() as $edge) {
+        $nodeIds = (clone $nodeQuery)->select('id');
+        foreach (WaterwayEdge::query()
+            ->whereIn('from_node_id', clone $nodeIds)
+            ->whereIn('to_node_id', clone $nodeIds)
+            ->get() as $edge) {
             $graph[$edge->from_node_id][] = $edge;
         }
 
@@ -66,12 +82,12 @@ class InlandRouteService
             $edges[] = $previous[$nodeId];
         }
         $edges = array_reverse($edges);
-        $nodeIds = [$start['id'], ...array_map(fn (WaterwayEdge $edge): int => $edge->to_node_id, $edges)];
+        $routeNodeIds = [$start['id'], ...array_map(fn (WaterwayEdge $edge): int => $edge->to_node_id, $edges)];
 
         return [
             'geometry' => [
                 ['latitude' => $origin['latitude'], 'longitude' => $origin['longitude']],
-                ...collect($nodeIds)->map(fn (int $id): array => ['latitude' => $nodes[$id]->latitude, 'longitude' => $nodes[$id]->longitude])->all(),
+                ...collect($routeNodeIds)->map(fn (int $id): array => ['latitude' => $nodes[$id]->latitude, 'longitude' => $nodes[$id]->longitude])->all(),
                 ['latitude' => $destination['latitude'], 'longitude' => $destination['longitude']],
             ],
             'miles' => (int) round($distances[$end['id']] / 1852),
@@ -79,20 +95,24 @@ class InlandRouteService
         ];
     }
 
-    /** @param array<int, WaterwayNode> $nodes @param array{latitude: float, longitude: float} $point
+    /**
+     * @param  array{latitude: float, longitude: float}  $point
      * @return array{id: int, distance: float}|null
      */
-    private function nearestNode(array $nodes, array $point): ?array
+    private function nearestNode(array $point): ?array
     {
-        $nearest = null;
-        foreach ($nodes as $node) {
-            $distance = $this->meters($point['latitude'], $point['longitude'], $node->latitude, $node->longitude);
-            if ($nearest === null || $distance < $nearest['distance']) {
-                $nearest = ['id' => $node->id, 'distance' => $distance];
-            }
-        }
+        $longitudeFactor = max(0.01, cos(deg2rad($point['latitude'])));
+        $node = WaterwayNode::query()
+            ->orderByRaw(
+                '((latitude - ?) * (latitude - ?)) + (((longitude - ?) * ?) * ((longitude - ?) * ?))',
+                [$point['latitude'], $point['latitude'], $point['longitude'], $longitudeFactor, $point['longitude'], $longitudeFactor],
+            )
+            ->first(['id', 'latitude', 'longitude']);
 
-        return $nearest;
+        return $node === null ? null : [
+            'id' => $node->id,
+            'distance' => $this->meters($point['latitude'], $point['longitude'], $node->latitude, $node->longitude),
+        ];
     }
 
     private function meters(float $latitudeA, float $longitudeA, float $latitudeB, float $longitudeB): float

@@ -1,5 +1,5 @@
 import { Form, Head } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
+import LoaderCircle from 'lucide-react/icons/loader-circle';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
@@ -66,5 +66,6 @@ export default function ForgotPassword({ status }: { status?: string }) {
 
 ForgotPassword.layout = {
     title: 'Mot de passe oublié',
-    description: 'Entrez votre e-mail pour recevoir un lien de réinitialisation.',
+    description:
+        'Entrez votre e-mail pour recevoir un lien de réinitialisation.',
 };

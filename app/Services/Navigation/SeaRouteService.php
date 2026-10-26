@@ -2,6 +2,7 @@
 
 namespace App\Services\Navigation;
 
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
 use RuntimeException;
 use Symfony\Component\Process\Process;
@@ -84,18 +85,26 @@ class SeaRouteService
      */
     private function run(array $input, int $timeout): array
     {
-        $process = new Process([
-            config('services.searoute.python'),
-            base_path('scripts/maritime_route.py'),
-        ], env: ['PYTHONPATH' => base_path('.python-packages')]);
-        $process->setInput(json_encode($input, JSON_THROW_ON_ERROR));
-        $process->setTimeout($timeout);
-        $process->run();
+        try {
+            return Cache::lock('searoute:process', $timeout + 5)->block(2, function () use ($input, $timeout): array {
+                $process = new Process([
+                    config('services.searoute.python'),
+                    base_path('scripts/maritime_route.py'),
+                ], env: ['PYTHONPATH' => base_path('.python-packages')]);
+                $process->setInput(json_encode($input, JSON_THROW_ON_ERROR));
+                $process->setTimeout($timeout);
+                $process->run();
 
-        if (! $process->isSuccessful()) {
-            throw new RuntimeException('Le moteur de route maritime est indisponible: '.$process->getErrorOutput());
+                if (! $process->isSuccessful()) {
+                    throw new RuntimeException('Le moteur de route maritime est indisponible.');
+                }
+
+                $payload = json_decode($process->getOutput(), true, 512, JSON_THROW_ON_ERROR);
+
+                return is_array($payload) ? $payload : [];
+            });
+        } catch (LockTimeoutException) {
+            throw new RuntimeException('Le moteur de route maritime est occupé. Réessayez dans quelques instants.');
         }
-
-        return json_decode($process->getOutput(), true, 512, JSON_THROW_ON_ERROR);
     }
 }

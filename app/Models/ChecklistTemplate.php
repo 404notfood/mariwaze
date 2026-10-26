@@ -2,14 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ChecklistTemplate extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'name',
         'navigation_area',
@@ -23,6 +20,7 @@ class ChecklistTemplate extends Model
         ];
     }
 
+    /** @return HasMany<ChecklistSection, $this> */
     public function sections(): HasMany
     {
         return $this->hasMany(ChecklistSection::class)->orderBy('position');

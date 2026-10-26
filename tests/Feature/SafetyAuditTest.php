@@ -8,11 +8,12 @@ use App\Services\Safety\SafetyAuditor;
 use Database\Seeders\MaritimeSafetySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use Tests\Concerns\AuthenticatesAccount;
 use Tests\TestCase;
 
 class SafetyAuditTest extends TestCase
 {
-    use RefreshDatabase;
+    use AuthenticatesAccount, RefreshDatabase;
 
     public function test_a_fully_equipped_coastal_boat_is_ready(): void
     {

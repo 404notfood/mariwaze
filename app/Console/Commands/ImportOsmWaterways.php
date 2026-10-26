@@ -16,7 +16,7 @@ class ImportOsmWaterways extends Command
 
     public function handle(): int
     {
-        $path = $this->argument('path');
+        $path = $this->input()->string('path')->toString();
         if (! is_file($path)) {
             $this->error("Fichier introuvable : {$path}");
 
@@ -43,6 +43,11 @@ class ImportOsmWaterways extends Command
             }
 
             $xml = simplexml_load_string($reader->readOuterXML());
+
+            if ($xml === false) {
+                continue;
+            }
+
             $tags = [];
             foreach ($xml->tag as $tag) {
                 $tags[(string) $tag['k']] = (string) $tag['v'];
@@ -89,7 +94,10 @@ class ImportOsmWaterways extends Command
         return self::SUCCESS;
     }
 
-    /** @param array{latitude: float, longitude: float} $from @param array{latitude: float, longitude: float} $to */
+    /**
+     * @param  array{latitude: float, longitude: float}  $from
+     * @param  array{latitude: float, longitude: float}  $to
+     */
     private function meters(array $from, array $to): float
     {
         $latitude = deg2rad($to['latitude'] - $from['latitude']);
