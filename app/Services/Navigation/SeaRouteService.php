@@ -4,6 +4,7 @@ namespace App\Services\Navigation;
 
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
+use App\Support\GeoScope;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 
@@ -70,7 +71,7 @@ class SeaRouteService
         foreach ($coordinates as $coordinate) {
             if (is_array($coordinate) && is_numeric($coordinate[0] ?? null) && is_numeric($coordinate[1] ?? null)) {
                 $points[] = [
-                    'longitude' => (float) $coordinate[0],
+                    'longitude' => GeoScope::normalizeLongitude((float) $coordinate[0]),
                     'latitude' => (float) $coordinate[1],
                 ];
             }

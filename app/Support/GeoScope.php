@@ -31,6 +31,7 @@ class GeoScope
      */
     public static function near(Builder $query, float $latitude, float $longitude, float $nauticalMiles): Builder
     {
+        $longitude = self::normalizeLongitude($longitude);
         if (Postgis::enabled()) {
             return $query
                 ->whereNotNull('location')
@@ -47,9 +48,18 @@ class GeoScope
         $latitudeDelta = $nauticalMiles / 60;
         $longitudeDelta = $nauticalMiles / max(0.01, 60 * cos(deg2rad($latitude)));
 
-        $query
-            ->whereBetween('latitude', [$latitude - $latitudeDelta, $latitude + $latitudeDelta])
-            ->whereBetween('longitude', [$longitude - $longitudeDelta, $longitude + $longitudeDelta]);
+        $query->whereBetween('latitude', [max(-90, $latitude - $latitudeDelta), min(90, $latitude + $latitudeDelta)]);
+        if ($longitudeDelta < 180 && abs($latitude) + $latitudeDelta < 90) {
+            $west = $longitude - $longitudeDelta;
+            $east = $longitude + $longitudeDelta;
+            if ($west < -180) {
+                $query->where(fn ($bounds) => $bounds->where('longitude', '>=', $west + 360)->orWhere('longitude', '<=', $east));
+            } elseif ($east > 180) {
+                $query->where(fn ($bounds) => $bounds->where('longitude', '>=', $west)->orWhere('longitude', '<=', $east - 360));
+            } else {
+                $query->whereBetween('longitude', [$west, $east]);
+            }
+        }
 
         if (! self::supportsSqlTrigonometry($query)) {
             // La boîte englobante est un sur-ensemble du disque recherché : le
@@ -108,7 +118,13 @@ class GeoScope
         $longitude = deg2rad($toLon - $fromLon);
         $a = sin($latitude / 2) ** 2
             + cos(deg2rad($fromLat)) * cos(deg2rad($toLat)) * sin($longitude / 2) ** 2;
+        $a = max(0, min(1, $a));
 
         return self::EARTH_RADIUS_NM * 2 * atan2(sqrt($a), sqrt(1 - $a));
+    }
+
+    public static function normalizeLongitude(float $longitude): float
+    {
+        return fmod(fmod($longitude + 180, 360) + 360, 360) - 180;
     }
 }

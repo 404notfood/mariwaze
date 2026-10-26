@@ -44,6 +44,7 @@ def haversine_nm(a_lat, a_lon, b_lat, b_lon):
     lat = math.radians(b_lat - a_lat)
     lon = math.radians(b_lon - a_lon)
     h = math.sin(lat / 2) ** 2 + math.cos(math.radians(a_lat)) * math.cos(math.radians(b_lat)) * math.sin(lon / 2) ** 2
+    h = min(1.0, max(0.0, h))
     return 3440.065 * 2 * math.atan2(math.sqrt(h), math.sqrt(1 - h))
 
 
@@ -59,7 +60,8 @@ def searoute_leg(origin, destination):
 def build_grid(origin, destination, margin_factor):
     """Grille du corridor entre les deux points : eau, proximité de terre."""
     lat_min, lat_max = sorted((origin["latitude"], destination["latitude"]))
-    lon_min, lon_max = sorted((origin["longitude"], destination["longitude"]))
+    destination_lon = origin["longitude"] + (destination["longitude"] - origin["longitude"] + 180) % 360 - 180
+    lon_min, lon_max = sorted((origin["longitude"], destination_lon))
     span = max(lat_max - lat_min, lon_max - lon_min)
     margin = max(0.35, span * margin_factor)
     lat_min -= margin
@@ -79,7 +81,7 @@ def build_grid(origin, destination, margin_factor):
     lats = lat_min + np.arange(rows) * cell
     lons = lon_min + np.arange(cols) * cell
     lon_grid, lat_grid = np.meshgrid(lons, lats)
-    land = globe.is_land(np.clip(lat_grid, -89.9, 89.9), lon_grid)
+    land = globe.is_land(np.clip(lat_grid, -89.9, 89.9), (lon_grid + 180) % 360 - 180)
 
     # Cellules d'eau adjacentes à la terre (dilatation 8-connexe, 3 passes).
     near = land.copy()
@@ -106,7 +108,9 @@ def build_grid(origin, destination, margin_factor):
 
 def to_cell(grid, point):
     row = int(round((point["latitude"] - grid["lat_min"]) / grid["cell"]))
-    col = int(round((point["longitude"] - grid["lon_min"]) / grid["cell"]))
+    center_lon = grid["lon_min"] + grid["cols"] * grid["cell"] / 2
+    longitude = point["longitude"] + 360 * round((center_lon - point["longitude"]) / 360)
+    col = int(round((longitude - grid["lon_min"]) / grid["cell"]))
     return (min(max(row, 0), grid["rows"] - 1), min(max(col, 0), grid["cols"] - 1))
 
 
@@ -237,7 +241,7 @@ def coastal_leg(origin, destination):
             continue
         path = safe_simplify(grid, path, tolerance=1.2)
         coordinates = [
-            [grid["lon_min"] + c * grid["cell"], grid["lat_min"] + r * grid["cell"]]
+            [(grid["lon_min"] + c * grid["cell"] + 180) % 360 - 180, grid["lat_min"] + r * grid["cell"]]
             for r, c in path
         ]
         # Extrémités exactes (le PHP raccorde aussi, ceinture et bretelles).

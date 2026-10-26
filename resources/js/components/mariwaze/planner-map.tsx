@@ -1,5 +1,6 @@
 import type * as Leaflet from 'leaflet';
 import { useEffect, useEffectEvent, useRef } from 'react';
+import { normalizeLongitude, unwrapPath } from '@/lib/geo';
 
 import 'leaflet/dist/leaflet.css';
 
@@ -252,9 +253,7 @@ export default function PlannerMap({
                       : [];
 
                 if (sailingPath.length > 1) {
-                    const path: Leaflet.LatLngTuple[] = sailingPath.map(
-                        (point) => [point.latitude, point.longitude],
-                    );
+                    const path = unwrapPath(sailingPath);
                     // Liseré clair sous la route pour la détacher du fond de carte.
                     L.polyline(path, {
                         color: '#ffffff',
@@ -275,10 +274,7 @@ export default function PlannerMap({
                     (!preserveViewport || !viewport.current)
                 ) {
                     map.fitBounds(
-                        points.map((point): Leaflet.LatLngTuple => [
-                            point.latitude,
-                            point.longitude,
-                        ]),
+                        unwrapPath(points),
                         { padding: [40, 40], animate: false },
                     );
                 } else if (
@@ -299,6 +295,8 @@ export default function PlannerMap({
                 }
 
                 points.forEach((point) => {
+                    const anchor = routeGeometry?.[0]?.longitude ?? points[0]?.longitude ?? point.longitude;
+                    const longitude = point.longitude + 360 * Math.round((anchor - point.longitude) / 360);
                     const { html, size } = markerHtml(point);
                     const kindLabel = {
                         depart: 'Départ',
@@ -307,7 +305,7 @@ export default function PlannerMap({
                         mouillage: 'Mouillage',
                         point: 'Étape',
                     }[point.kind];
-                    L.marker([point.latitude, point.longitude], {
+                    L.marker([point.latitude, longitude], {
                         icon: L.divIcon({
                             className: 'mariwaze-point-marker',
                             html,
@@ -450,8 +448,8 @@ function attachSeamarkLayer(L: any, map: any): () => void {
         const query = new URLSearchParams({
             south: bounds.getSouth().toFixed(4),
             north: bounds.getNorth().toFixed(4),
-            west: bounds.getWest().toFixed(4),
-            east: bounds.getEast().toFixed(4),
+            west: normalizeLongitude(bounds.getWest()).toFixed(4),
+            east: normalizeLongitude(bounds.getEast()).toFixed(4),
         });
 
         fetch(`/api/seamarks?${query}`, {

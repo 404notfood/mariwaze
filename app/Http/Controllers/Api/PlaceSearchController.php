@@ -62,7 +62,9 @@ class PlaceSearchController extends Controller
                 $places[] = [...$place, 'reference' => null, 'region' => null, 'country_code' => null, 'type' => 'locality'];
             }
         }
-        foreach (PlaceCoordinate::query()->where('normalized_name', 'like', '%'.$this->normalize($search).'%')->orderBy('name')->orderBy('id')->limit(8)->get() as $place) {
+        foreach (PlaceCoordinate::query()->named($search, true)
+            ->orderByRaw('case when normalized_name = ? then 0 else 1 end', [$this->normalize($search)])
+            ->orderByDesc('population')->orderBy('name')->orderBy('id')->limit(8)->get() as $place) {
             $places[] = [
                 'reference' => 'locality:'.$place->id,
                 'name' => $place->name,
@@ -79,6 +81,6 @@ class PlaceSearchController extends Controller
 
     private function normalize(string $name): string
     {
-        return str($name)->ascii()->lower()->replace(['’', "'"], '')->squish()->replace(' ', '-')->trim()->toString();
+        return PlaceCoordinate::normalizeName($name);
     }
 }

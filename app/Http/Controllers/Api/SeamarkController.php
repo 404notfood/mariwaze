@@ -22,7 +22,7 @@ class SeamarkController extends Controller
             'south' => ['required', 'numeric', 'between:-90,90'],
             'north' => ['required', 'numeric', 'between:-90,90', 'gte:south'],
             'west' => ['required', 'numeric', 'between:-180,180'],
-            'east' => ['required', 'numeric', 'between:-180,180', 'gte:west'],
+            'east' => ['required', 'numeric', 'between:-180,180'],
         ]);
 
         $south = (float) $data['south'];
@@ -31,7 +31,8 @@ class SeamarkController extends Controller
         $east = (float) $data['east'];
 
         // Une emprise trop large signifie un zoom trop faible : rien à afficher.
-        if ($north - $south > self::MAX_SPAN_DEGREES || $east - $west > self::MAX_SPAN_DEGREES) {
+        $longitudeSpan = $east >= $west ? $east - $west : 360 - $west + $east;
+        if ($north - $south > self::MAX_SPAN_DEGREES || $longitudeSpan > self::MAX_SPAN_DEGREES) {
             return response()->json([]);
         }
 

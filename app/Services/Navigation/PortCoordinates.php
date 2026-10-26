@@ -45,19 +45,22 @@ class PortCoordinates
             return self::LOCATIONS[$normalized];
         }
 
-        // A national import can contain a minor homonym of a city abroad.
-        // An explicit reference wins; otherwise consult the global provider first.
-        $global = $allowGeocoding ? $this->geocoder->locate($name) : null;
-        if ($global !== null) {
-            return $global;
-        }
-
         $place = Schema::hasTable('place_coordinates')
             ? PlaceCoordinate::query()
-                ->where('normalized_name', $normalized)
+                ->named($name)
+                ->orderByDesc('population')
                 ->orderBy('feature_class')
                 ->first()
             : null;
+
+        // The world catalogue ranks cities above minor national homonyms.
+        // Explicit references always retain the user's chosen place.
+        if ($place === null || $place->population === 0) {
+            $global = $allowGeocoding ? $this->geocoder->locate($name) : null;
+            if ($global !== null) {
+                return $global;
+            }
+        }
 
         return $place === null ? null : [
             'name' => $place->name,
@@ -101,6 +104,6 @@ class PortCoordinates
 
     private function normalize(string $name): string
     {
-        return str($name)->ascii()->lower()->replace(['’', "'"], '')->replace(' ', '-')->trim()->toString();
+        return PlaceCoordinate::normalizeName($name);
     }
 }

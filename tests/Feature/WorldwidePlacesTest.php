@@ -35,6 +35,29 @@ class WorldwidePlacesTest extends TestCase
         Http::assertSentCount(1);
     }
 
+    public function test_gps_points_can_be_saved_and_resolved_without_any_geocoder(): void
+    {
+        $this->mock(PortGeocoder::class)->shouldNotReceive('locate');
+        $this->post('/croisieres', array_replace($this->payload(), [
+            'departure_port' => 'GPS 48.64900, -2.02500', 'departure_place' => 'gps:48.64900,-2.02500',
+            'destination_port' => 'GPS 16.24086, -61.53341', 'destination_place' => 'gps:16.24086,-61.53341',
+        ]))->assertSessionHasNoErrors()->assertRedirect();
+        $cruise = Cruise::firstOrFail();
+        $location = app(PortCoordinates::class)->find($cruise->destination_port, $cruise->destination_place);
+        $this->assertSame(16.24086, $location['latitude']);
+        $this->assertSame(-61.53341, $location['longitude']);
+        $this->assertDatabaseCount('place_coordinates', 0);
+    }
+
+    public function test_invalid_or_out_of_range_gps_coordinates_are_rejected(): void
+    {
+        foreach (['gps:91,0', 'gps:0,181', 'gps:NaN,0', 'gps:0,-181', 'gps:48,2,3'] as $reference) {
+            $this->assertNull(app(PortCoordinates::class)->referenced($reference));
+            $this->post('/croisieres', array_replace($this->payload(), ['destination_place' => $reference]))
+                ->assertSessionHasErrors('destination_port');
+        }
+    }
+
     public function test_local_autocomplete_includes_geodata_and_never_calls_a_remote_provider(): void
     {
         $local = $this->mainlandHomonym();

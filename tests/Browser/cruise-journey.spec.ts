@@ -273,3 +273,62 @@ test('préparer Saint-Malo Pointe-à-Pitre en sélectionnant la Guadeloupe plut�
         page.getByRole('heading', { name: 'Comprendre cette proposition' }),
     ).toBeVisible();
 });
+
+test('créer une croisière en cliquant deux coordonnées GPS sans rechercher de lieux', async ({
+    page,
+}, testInfo) => {
+    await page.goto('/login');
+    await page.getByLabel('Adresse e-mail').fill('browser@example.test');
+    await page
+        .getByLabel('Mot de passe', { exact: true })
+        .fill('Browser-test-123!');
+    await page
+        .getByRole('button', { name: 'Se connecter', exact: true })
+        .click();
+    await expect(page).toHaveURL(/dashboard/);
+    await page.goto('/croisieres/nouvelle');
+    await page
+        .getByLabel('Nom de la croisière')
+        .fill('Navigation par coordonnées');
+    const map = page.getByLabel('Carte interactive de préparation');
+    await expect(map.locator('.leaflet-control-zoom-in')).toBeVisible();
+    await map.click({ position: { x: 230, y: 180 } });
+    const departure = page.getByRole('combobox', { name: 'Port de départ' });
+    await expect(departure).toHaveValue(/^GPS /);
+    const departureValue = await departure.inputValue();
+    await expect(
+        page.getByRole('button', { name: 'Placer l’arrivée', exact: true }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await expect(map.locator('.leaflet-control-zoom-in')).toBeVisible();
+    await map.click({ position: { x: 290, y: 240 } });
+    const destination = page.getByRole('combobox', {
+        name: 'Destination',
+        exact: true,
+    });
+    await expect(destination).toHaveValue(/^GPS /);
+    const destinationValue = await destination.inputValue();
+    expect(destinationValue).not.toBe(departureValue);
+    await page.screenshot({
+        path: testInfo.outputPath('selection-gps.png'),
+        fullPage: true,
+    });
+    const date = new Date();
+    date.setDate(date.getDate() + 7);
+    await page
+        .getByLabel('Date de départ')
+        .fill(date.toISOString().slice(0, 10));
+    await page
+        .getByRole('button', { name: 'Créer la croisière', exact: true })
+        .click();
+    await expect(
+        page.getByRole('heading', {
+            name: 'Navigation par coordonnées',
+            exact: true,
+        }),
+    ).toBeVisible();
+    const cruiseUrl = page.url();
+    await page.goto(`${cruiseUrl}/modifier`);
+    await expect(departure).toHaveValue(departureValue);
+    await expect(destination).toHaveValue(destinationValue);
+    await expect(map.locator('.mariwaze-point-marker')).toHaveCount(2);
+});

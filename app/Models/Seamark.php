@@ -56,8 +56,9 @@ class Seamark extends Model
      */
     public function scopeInBounds(Builder $query, float $south, float $west, float $north, float $east): Builder
     {
-        return $query
-            ->whereBetween('latitude', [$south, $north])
-            ->whereBetween('longitude', [$west, $east]);
+        return $query->whereBetween('latitude', [$south, $north])
+            ->where(fn ($bounds) => $west <= $east
+                ? $bounds->whereBetween('longitude', [$west, $east])
+                : $bounds->where('longitude', '>=', $west)->orWhere('longitude', '<=', $east));
     }
 }
