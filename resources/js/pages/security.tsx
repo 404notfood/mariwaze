@@ -135,8 +135,8 @@ export default function Security({ securityData, cruise }: Props) {
                         <CardContent className="flex flex-col gap-4 pt-6 md:flex-row md:items-center md:justify-between">
                             <div>
                                 <p className="text-sm text-muted-foreground">
-                                    {securityData.boat.name} — équipement
-                                    réglementaire
+                                    {securityData.boat.name} — équipement de
+                                    préparation
                                 </p>
                                 <p className="text-2xl font-bold">
                                     {securityData.readiness}%
@@ -207,7 +207,7 @@ export default function Security({ securityData, cruise }: Props) {
                     <Card className="border-border/60">
                         <CardHeader>
                             <CardTitle className="text-base">
-                                Équipement réglementaire
+                                Équipement de préparation
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2">

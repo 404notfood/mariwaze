@@ -144,8 +144,12 @@ export default function PortShow({ port }: Props) {
                             )}
 
                             <p className="mt-4 text-xs text-muted-foreground">
-                                Données issues d&apos;OpenStreetMap — services
-                                et tarifs à confirmer auprès de la capitainerie.
+                                Source :{' '}
+                                {port.source === 'nga-wpi'
+                                    ? 'NGA World Port Index'
+                                    : 'OpenStreetMap'}
+                                . Services, accueil des plaisanciers et tarifs à
+                                confirmer auprès de la capitainerie.
                             </p>
                         </div>
 

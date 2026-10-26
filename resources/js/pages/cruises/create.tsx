@@ -4,9 +4,10 @@ import ArrowRight from 'lucide-react/icons/arrow-right';
 import MapPin from 'lucide-react/icons/map-pin';
 import Ship from 'lucide-react/icons/ship';
 import { Children, cloneElement, isValidElement, useId } from 'react';
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import PlaceSearch from '@/components/mariwaze/place-search';
 import type { Place } from '@/components/mariwaze/place-search';
+import PlannerMap from '@/components/mariwaze/planner-map';
 import type { NavigationPoint } from '@/components/mariwaze/planner-map';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +36,6 @@ type Prefill = {
     departure_place?: string | null;
     destination_place?: string | null;
 };
-const PlannerMap = lazy(() => import('@/components/mariwaze/planner-map'));
 
 export default function CreateCruise({
     cruise,
@@ -503,37 +503,32 @@ export default function CreateCruise({
                                 ? 'Cliquez sur la carte pour choisir le départ.'
                                 : 'Cliquez sur la carte pour choisir l’arrivée.'}
                         </p>
-                        <Suspense
-                            fallback={
-                                <p role="status">Chargement de la carte…</p>
-                            }
-                        >
-                            <PlannerMap
-                                points={mapPoints}
-                                onMapClick={(point) => {
-                                    const place = gpsPlace(
-                                        point.latitude,
-                                        point.longitude,
-                                    );
-                                    setLocations((previous) => ({
-                                        ...previous,
-                                        [picking]: place,
-                                    }));
-                                    setData((previous) => ({
-                                        ...previous,
-                                        [`${picking}_port`]: place.name,
-                                        [`${picking}_place`]: place.reference,
-                                    }));
 
-                                    if (picking === 'departure') {
-                                        setPicking('destination');
-                                    }
-                                }}
-                                routeAvailable={false}
-                                preserveViewport
-                                className="h-[420px] w-full rounded-md border"
-                            />
-                        </Suspense>
+                        <PlannerMap
+                            points={mapPoints}
+                            onMapClick={(point) => {
+                                const place = gpsPlace(
+                                    point.latitude,
+                                    point.longitude,
+                                );
+                                setLocations((previous) => ({
+                                    ...previous,
+                                    [picking]: place,
+                                }));
+                                setData((previous) => ({
+                                    ...previous,
+                                    [`${picking}_port`]: place.name,
+                                    [`${picking}_place`]: place.reference,
+                                }));
+
+                                if (picking === 'departure') {
+                                    setPicking('destination');
+                                }
+                            }}
+                            routeAvailable={false}
+                            preserveViewport
+                            className="h-[420px] w-full rounded-md border"
+                        />
                         <div className="grid gap-2 text-sm sm:grid-cols-2">
                             {Object.entries(locations).map(([side, place]) => (
                                 <p key={side}>

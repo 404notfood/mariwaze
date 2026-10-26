@@ -20,6 +20,7 @@ class ExploreController extends Controller
         $filters = $request->validate([
             'q' => ['nullable', 'string', 'max:120'],
             'type' => ['nullable', 'in:port,anchorage'],
+            'country' => ['nullable', 'string', 'regex:/^[A-Z]{2}$/'],
             'min_depth' => ['nullable', 'numeric', 'between:0,100'],
             'service' => ['nullable', 'in:has_fuel,has_water,has_electricity,has_shower,has_repair,has_provisions'],
             'protection' => ['nullable', 'in:N,NE,E,SE,S,SW,W,NW'],
@@ -61,6 +62,8 @@ class ExploreController extends Controller
         return Inertia::render('explore', [
             'filters' => [...$filters, 'q' => $search, 'type' => $type],
             'boats' => $boats->map(fn (Boat $boat): array => $boat->only(['id', 'name', 'draft']))->all(),
+            'countries' => Port::whereNotNull('country_code')->distinct()->pluck('country_code')
+                ->merge(Anchorage::whereNotNull('country_code')->distinct()->pluck('country_code'))->unique()->sort()->values()->all(),
             'spots' => $spots,
             'pagination' => [
                 'total' => $pagination->total(),
@@ -135,6 +138,7 @@ class ExploreController extends Controller
     {
         $depth = max((float) ($filters['min_depth'] ?? 0), $boat === null ? 0 : $boat->draft + 0.5);
 
-        return $query->when($depth > 0, fn ($query) => $query->where('min_depth_meters', '>=', $depth));
+        return $query->when($depth > 0, fn ($query) => $query->where('min_depth_meters', '>=', $depth))
+            ->when(! empty($filters['country']), fn ($query) => $query->where('country_code', $filters['country']));
     }
 }

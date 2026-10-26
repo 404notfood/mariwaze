@@ -64,7 +64,9 @@ describe('PlaceSearch', () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
         expect(fetchMock.mock.calls[0][0]).not.toContain('worldwide');
         fireEvent.click(
-            screen.getByRole('button', { name: 'Rechercher dans le monde' }),
+            screen.getByRole('button', {
+                name: 'Élargir la recherche en ligne',
+            }),
         );
         const result = await screen.findByRole('option', {
             name: /Pointe-à-Pitre.*GP/,

@@ -273,10 +273,10 @@ export default function PlannerMap({
                     points.length > 1 &&
                     (!preserveViewport || !viewport.current)
                 ) {
-                    map.fitBounds(
-                        unwrapPath(points),
-                        { padding: [40, 40], animate: false },
-                    );
+                    map.fitBounds(unwrapPath(points), {
+                        padding: [40, 40],
+                        animate: false,
+                    });
                 } else if (
                     points.length === 1 &&
                     (!preserveViewport || !viewport.current)
@@ -295,8 +295,13 @@ export default function PlannerMap({
                 }
 
                 points.forEach((point) => {
-                    const anchor = routeGeometry?.[0]?.longitude ?? points[0]?.longitude ?? point.longitude;
-                    const longitude = point.longitude + 360 * Math.round((anchor - point.longitude) / 360);
+                    const anchor =
+                        routeGeometry?.[0]?.longitude ??
+                        points[0]?.longitude ??
+                        point.longitude;
+                    const longitude =
+                        point.longitude +
+                        360 * Math.round((anchor - point.longitude) / 360);
                     const { html, size } = markerHtml(point);
                     const kindLabel = {
                         depart: 'Départ',

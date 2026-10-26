@@ -264,8 +264,8 @@ export default function PlaceSearch({
                             }}
                         >
                             {worldwide
-                                ? 'Revenir au catalogue local'
-                                : 'Rechercher dans le monde'}
+                                ? 'Revenir au catalogue mondial'
+                                : 'Élargir la recherche en ligne'}
                         </button>
                         {worldwide && attribution && (
                             <a

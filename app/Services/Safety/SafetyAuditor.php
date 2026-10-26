@@ -8,6 +8,7 @@ use App\Models\Cruise;
 use App\Models\CruiseRoute;
 use App\Models\EmergencyContact;
 use App\Models\Port;
+use App\Services\Navigation\PortCoordinates;
 
 /**
  * Audit « Mon bateau est-il prêt ? » (doc/Intro.md, écrans 9-10).
@@ -124,7 +125,7 @@ class SafetyAuditor
             return [];
         }
 
-        return CountryRegulation::query()
+        $regulations = CountryRegulation::query()
             ->whereIn('country_code', $codes)
             ->orderBy('country_name')
             ->get()
@@ -137,6 +138,13 @@ class SafetyAuditor
                 'anchoring_rules' => $regulation->anchoring_rules,
             ])
             ->all();
+
+        foreach (array_diff($codes, array_column($regulations, 'code')) as $code) {
+            $regulations[] = ['code' => $code, 'name' => $code, 'flag' => '', 'docs' => [],
+                'rules' => 'Réglementation locale non renseignée pour ce pays ou territoire.', 'anchoring_rules' => null];
+        }
+
+        return $regulations;
     }
 
     /**
@@ -191,8 +199,10 @@ class SafetyAuditor
 
         $codes = [];
 
-        foreach ([$cruise->departure_port, $cruise->destination_port] as $name) {
-            $port = Port::query()->where('name', $name)->whereNotNull('country_code')->first();
+        foreach ([[$cruise->departure_port, $cruise->departure_place], [$cruise->destination_port, $cruise->destination_place]] as [$name, $reference]) {
+            $port = $reference === null
+                ? Port::query()->where('name', $name)->whereNotNull('country_code')->first()
+                : app(PortCoordinates::class)->referenced($reference);
 
             if ($port !== null) {
                 $codes[] = $port->country_code;
@@ -249,17 +259,11 @@ class SafetyAuditor
             ->near($latitude, $longitude, 100)
             ->first();
 
-        $query = EmergencyContact::query()->orderBy('position');
-
-        if ($port !== null) {
-            $query->where('country_code', $port->country_code);
+        if ($port === null) {
+            return [];
         }
 
-        $contacts = $query->get();
-
-        if ($contacts->isEmpty()) {
-            $contacts = EmergencyContact::query()->orderBy('position')->get();
-        }
+        $contacts = EmergencyContact::where('country_code', $port->country_code)->orderBy('position')->get();
 
         return $contacts->map(fn (EmergencyContact $contact): array => [
             'authority' => $contact->authority,

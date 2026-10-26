@@ -24,6 +24,8 @@ if (config('database.connections.sqlite.database') !== $database || ! $app->envi
 Artisan::call('migrate:fresh', ['--force' => true]);
 User::factory()->create(['name' => 'Capitaine Test', 'email' => 'browser@example.test', 'password' => 'Browser-test-123!']);
 PlaceCoordinate::create(['name' => 'Pointe à Pitre', 'normalized_name' => 'pointe-a-pitre', 'latitude' => 44.07984, 'longitude' => 1.98937, 'feature_class' => 'P', 'feature_code' => 'PPL', 'country_code' => 'FR']);
+PlaceCoordinate::create(['name' => 'Lisbon', 'normalized_name' => 'lisbon', 'alternate_names' => ['lisbonne', 'lisboa'], 'population' => 545000, 'latitude' => 38.72509, 'longitude' => -9.1498, 'feature_class' => 'P', 'feature_code' => 'PPLC', 'country_code' => 'PT']);
+Port::create(['name' => 'Suva Harbor', 'slug' => 'suva-world', 'latitude' => -18.13, 'longitude' => 178.42, 'country_code' => 'FJ', 'source' => 'nga-wpi', 'source_ref' => '123']);
 foreach ([['test-depart', 'Port Navigo', 'FR', 43.3, 5.3], ['test-arrivee', 'Port Horizon', 'FR', 43.8, 5.8], ['test-homonyme', 'Port Navigo', 'CA', 46.8, -71.2]] as [$slug, $name, $country, $lat, $lon]) {
     Port::create(['slug' => $slug, 'name' => $name, 'country_code' => $country, 'latitude' => $lat, 'longitude' => $lon, 'min_depth_meters' => 8, 'has_water' => true]);
 }

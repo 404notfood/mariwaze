@@ -2,6 +2,7 @@
 
 namespace App\Services\Safety;
 
+use App\Models\Port;
 use App\Support\GeoScope;
 
 /**
@@ -61,6 +62,14 @@ class CoastalCountryResolver
             if ($distance < $minimum) {
                 $minimum = $distance;
                 $nearest = $code;
+            }
+        }
+
+        foreach (Port::whereNotNull('country_code')->near($latitude, $longitude, self::MAX_DISTANCE_NM)->get() as $port) {
+            $distance = GeoScope::nauticalMiles($latitude, $longitude, $port->latitude, $port->longitude);
+            if ($distance < $minimum) {
+                $minimum = $distance;
+                $nearest = $port->country_code;
             }
         }
 

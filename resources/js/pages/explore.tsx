@@ -41,8 +41,10 @@ type Props = {
         service?: string;
         protection?: string;
         boat_id?: number;
+        country?: string;
     };
     boats: { id: number; name: string; draft: number }[];
+    countries: string[];
     pagination: {
         total: number;
         from: number | null;
@@ -55,6 +57,7 @@ type Props = {
     spots: Spot[];
     counts: { ports: number; anchorages: number };
 };
+const countryNames = new Intl.DisplayNames(['fr'], { type: 'region' });
 
 export default function Explore({
     filters,
@@ -62,6 +65,7 @@ export default function Explore({
     counts,
     boats,
     pagination,
+    countries,
 }: Props) {
     const [departure, setDeparture] = useState('');
     const [destination, setDestination] = useState('');
@@ -94,7 +98,10 @@ export default function Explore({
                     </h1>
                     <p className="mt-2 text-muted-foreground">
                         {counts.ports} ports et {counts.anchorages} mouillages
-                        issus d&apos;OpenStreetMap.
+                        dans le catalogue mondial.
+                        <span className="block text-xs">
+                            Sources : OpenStreetMap et NGA World Port Index.
+                        </span>
                     </p>
                 </header>
 
@@ -171,6 +178,7 @@ export default function Explore({
                     boats={boats}
                     spots={spots}
                     pagination={pagination}
+                    countries={countries}
                 />
             </main>
         </>
@@ -182,13 +190,15 @@ function ExploreCatalogue({
     boats,
     spots,
     pagination,
-}: Pick<Props, 'filters' | 'boats' | 'spots' | 'pagination'>) {
+    countries,
+}: Pick<Props, 'filters' | 'boats' | 'spots' | 'pagination' | 'countries'>) {
     const [search, setSearch] = useState(filters.q ?? '');
     const [depth, setDepth] = useState(filters.min_depth ?? '');
     const [service, setService] = useState(filters.service ?? '');
     const [protection, setProtection] = useState(filters.protection ?? '');
     const [boat, setBoat] = useState(filters.boat_id?.toString() ?? '');
     const [pending, setPending] = useState(false);
+    const [country, setCountry] = useState(filters.country ?? '');
 
     const visit = (type: string | null = filters.type) => {
         router.get(
@@ -200,6 +210,7 @@ function ExploreCatalogue({
                 service: service || undefined,
                 protection: protection || undefined,
                 boat_id: boat || undefined,
+                country: country || undefined,
             },
             {
                 preserveState: true,
@@ -314,6 +325,21 @@ function ExploreCatalogue({
                         ))}
                     </select>
                 </label>
+                <label className="text-sm">
+                    Pays ou territoire
+                    <select
+                        className="mt-1 h-9 w-full rounded-md border bg-background px-2"
+                        value={country}
+                        onChange={(event) => setCountry(event.target.value)}
+                    >
+                        <option value="">Tous les pays et territoires</option>
+                        {countries.map((code) => (
+                            <option key={code} value={code}>
+                                {countryNames.of(code) ?? code} ({code})
+                            </option>
+                        ))}
+                    </select>
+                </label>
                 <Button type="submit" variant="outline" disabled={pending}>
                     {pending && (
                         <LoaderCircle className="size-4 animate-spin" />
@@ -396,6 +422,9 @@ function ExploreCatalogue({
                                                     <MapPin className="size-3" />
                                                     {spot.region ??
                                                         `${spot.latitude.toFixed(3)}, ${spot.longitude.toFixed(3)}`}
+                                                    {spot.country_code
+                                                        ? ` · ${spot.country_code}`
+                                                        : ''}
                                                 </p>
                                             </div>
                                         </div>

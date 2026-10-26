@@ -17,9 +17,9 @@ class ImportWorldCatalogue extends Command
     public function handle(WorldCatalogueImporter $importer): int
     {
         $directory = storage_path('app/geodata');
-        $cities = $this->option('cities') ?: $directory.'/cities500.txt';
-        $ports = $this->option('ports') ?: $directory.'/world-ports.json';
-        $admin = $this->option('admin1') ?: $directory.'/admin1CodesASCII.txt';
+        $cities = $this->input()->string('cities')->toString() ?: $directory.'/cities500.txt';
+        $ports = $this->input()->string('ports')->toString() ?: $directory.'/world-ports.json';
+        $admin = $this->input()->string('admin1')->toString() ?: $directory.'/admin1CodesASCII.txt';
         try {
             if ($this->option('download')) {
                 if (! is_dir($directory)) {

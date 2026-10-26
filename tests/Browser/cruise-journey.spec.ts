@@ -231,7 +231,10 @@ test('préparer Saint-Malo Pointe-à-Pitre en sélectionnant la Guadeloupe plut�
         page.getByRole('option', { name: /Pointe à Pitre.*FR/ }),
     ).toBeVisible();
     await page
-        .getByRole('button', { name: 'Rechercher dans le monde', exact: true })
+        .getByRole('button', {
+            name: 'Élargir la recherche en ligne',
+            exact: true,
+        })
         .click();
     const guadeloupe = page.getByRole('option', {
         name: /Pointe-à-Pitre.*Guadeloupe.*GP/,
@@ -331,4 +334,36 @@ test('créer une croisière en cliquant deux coordonnées GPS sans rechercher de
     await expect(departure).toHaveValue(departureValue);
     await expect(destination).toHaveValue(destinationValue);
     await expect(map.locator('.mariwaze-point-marker')).toHaveCount(2);
+});
+
+test('le catalogue mondial trouve les noms traduits et filtre les ports du Pacifique', async ({
+    page,
+}, testInfo) => {
+    await page.goto('/login');
+    await page.getByLabel('Adresse e-mail').fill('browser@example.test');
+    await page
+        .getByLabel('Mot de passe', { exact: true })
+        .fill('Browser-test-123!');
+    await page
+        .getByRole('button', { name: 'Se connecter', exact: true })
+        .click();
+    await expect(page).toHaveURL(/dashboard/);
+    await page.goto('/croisieres/nouvelle');
+    await page
+        .getByRole('combobox', { name: 'Port de départ' })
+        .fill('Lisbonne');
+    await expect(
+        page.getByRole('option', { name: /Lisbon.*PT/ }),
+    ).toBeVisible();
+    await page.goto('/explorer');
+    await page.getByLabel('Pays ou territoire').selectOption('FJ');
+    await page.getByRole('button', { name: 'Rechercher', exact: true }).click();
+    await expect(page.getByText('Suva Harbor', { exact: true })).toBeVisible();
+    await expect(
+        page.getByText('Port Horizon', { exact: true }),
+    ).not.toBeVisible();
+    await page.screenshot({
+        path: testInfo.outputPath('catalogue-pacifique.png'),
+        fullPage: true,
+    });
 });

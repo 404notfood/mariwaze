@@ -2,9 +2,9 @@
 
 namespace App\Services\Navigation;
 
+use App\Support\GeoScope;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
-use App\Support\GeoScope;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 
@@ -17,8 +17,8 @@ class SeaRouteService
      */
     public function route(array $origin, array $destination): array
     {
-        // v3 : routeur côtier fin, simplification qui ne coupe jamais la terre.
-        $key = sprintf('searoute:v3:%0.3f:%0.3f:%0.3f:%0.3f', $origin['latitude'], $origin['longitude'], $destination['latitude'], $destination['longitude']);
+        // v4 : routage côtier et longitudes normalisées à l'antiméridien.
+        $key = sprintf('searoute:v4:%0.3f:%0.3f:%0.3f:%0.3f', $origin['latitude'], $origin['longitude'], $destination['latitude'], $destination['longitude']);
 
         return Cache::remember($key, now()->addDays(30), function () use ($origin, $destination): array {
             return $this->toPoints($this->run(['origin' => $origin, 'destination' => $destination], 30));
@@ -42,7 +42,7 @@ class SeaRouteService
             round($point['latitude'], 3),
             round($point['longitude'], 3),
         ], $points);
-        $key = 'searoute:legs:v3:'.md5(json_encode($rounded, JSON_THROW_ON_ERROR));
+        $key = 'searoute:legs:v4:'.md5(json_encode($rounded, JSON_THROW_ON_ERROR));
 
         return Cache::remember($key, now()->addDays(30), function () use ($points): array {
             $payload = $this->run(['waypoints' => $points], 60);
