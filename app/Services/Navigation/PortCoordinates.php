@@ -74,6 +74,20 @@ class PortCoordinates
 
     public function referenced(string $reference): Port|Anchorage|PlaceCoordinate|null
     {
+        if (preg_match('/^gps:(-?[0-9]+(?:\.[0-9]+)?),(-?[0-9]+(?:\.[0-9]+)?)$/', $reference, $point)) {
+            $latitude = (float) $point[1];
+            $longitude = (float) $point[2];
+            if (! is_finite($latitude) || ! is_finite($longitude) || abs($latitude) > 90 || abs($longitude) > 180) {
+                return null;
+            }
+
+            return new PlaceCoordinate([
+                'name' => sprintf('GPS %.5F, %.5F', $latitude == 0 ? 0 : $latitude, $longitude == 0 ? 0 : $longitude),
+                'latitude' => $latitude,
+                'longitude' => $longitude,
+            ]);
+        }
+
         if (! preg_match('/^(port|anchorage|locality):([1-9][0-9]*)$/', $reference, $matches)) {
             return null;
         }

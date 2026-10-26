@@ -1,5 +1,5 @@
 import type * as Leaflet from 'leaflet';
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 
 import 'leaflet/dist/leaflet.css';
 
@@ -57,6 +57,7 @@ const POINT_COLORS: Record<NavigationPoint['kind'], string> = {
 };
 
 let leafletPromise: Promise<typeof Leaflet> | null = null;
+const EMPTY_HAZARDS: HazardAlert[] = [];
 
 function loadLeaflet(): Promise<typeof Leaflet> {
     leafletPromise ??= import('leaflet');
@@ -152,7 +153,8 @@ export default function PlannerMap({
     marine,
     routeGeometry,
     routeAvailable = true,
-    hazards = [],
+    hazards = EMPTY_HAZARDS,
+    preserveViewport = false,
 }: {
     points: NavigationPoint[];
     onMapClick: (point: NavigationPoint) => void;
@@ -161,8 +163,13 @@ export default function PlannerMap({
     routeGeometry?: Array<Pick<NavigationPoint, 'latitude' | 'longitude'>>;
     routeAvailable?: boolean;
     hazards?: HazardAlert[];
+    preserveViewport?: boolean;
 }) {
     const element = useRef<HTMLDivElement>(null);
+    const viewport = useRef<{ center: Leaflet.LatLng; zoom: number } | null>(
+        null,
+    );
+    const handleMapClick = useEffectEvent(onMapClick);
 
     useEffect(() => {
         const container = element.current;
@@ -186,8 +193,9 @@ export default function PlannerMap({
                     fadeAnimation: false,
                     zoomControl: true,
                     attributionControl: true,
-                    center: [46.7, -2.4],
-                    zoom: 6,
+                    center: [20, 0],
+                    zoom: 2,
+                    worldCopyJump: true,
                 });
                 L.tileLayer(
                     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -258,8 +266,14 @@ export default function PlannerMap({
                         weight: 3.5,
                         ...(hasExactRoute ? {} : { dashArray: '10 8' }),
                     }).addTo(map);
-                    map.fitBounds(path, { padding: [40, 40] });
-                } else if (points.length > 1) {
+
+                    if (!preserveViewport || !viewport.current) {
+                        map.fitBounds(path, { padding: [40, 40] });
+                    }
+                } else if (
+                    points.length > 1 &&
+                    (!preserveViewport || !viewport.current)
+                ) {
                     map.fitBounds(
                         points.map((point): Leaflet.LatLngTuple => [
                             point.latitude,
@@ -267,10 +281,21 @@ export default function PlannerMap({
                         ]),
                         { padding: [40, 40], animate: false },
                     );
-                } else if (points.length === 1) {
+                } else if (
+                    points.length === 1 &&
+                    (!preserveViewport || !viewport.current)
+                ) {
                     map.setView([points[0].latitude, points[0].longitude], 9);
                 } else {
-                    map.setView([46.7, -2.4], 6);
+                    map.setView([20, 0], 2);
+                }
+
+                if (preserveViewport && viewport.current) {
+                    map.setView(
+                        viewport.current.center,
+                        viewport.current.zoom,
+                        { animate: false },
+                    );
                 }
 
                 points.forEach((point) => {
@@ -296,7 +321,7 @@ export default function PlannerMap({
                             ),
                             { direction: 'top', offset: [0, -size / 2] },
                         )
-                        .on('click', () => onMapClick(point))
+                        .on('click', () => handleMapClick(point))
                         .addTo(map);
                 });
 
@@ -344,7 +369,7 @@ export default function PlannerMap({
                 map.on(
                     'click',
                     (event: { latlng: { lat: number; lng: number } }) =>
-                        onMapClick({
+                        handleMapClick({
                             name: `Escale ${event.latlng.lat.toFixed(3)}, ${event.latlng.lng.toFixed(3)}`,
                             latitude: event.latlng.lat,
                             longitude: event.latlng.lng,
@@ -359,13 +384,24 @@ export default function PlannerMap({
             detachSeamarks();
 
             if (map) {
+                viewport.current = {
+                    center: map.getCenter(),
+                    zoom: map.getZoom(),
+                };
                 map.remove();
             } else if ((container as any)._leaflet_id) {
                 delete (container as any)._leaflet_id;
                 (container as any)._leaflet_events = undefined;
             }
         };
-    }, [points, onMapClick, marine, routeGeometry, routeAvailable, hazards]);
+    }, [
+        points,
+        marine,
+        routeGeometry,
+        routeAvailable,
+        hazards,
+        preserveViewport,
+    ]);
 
     return (
         <div

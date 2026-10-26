@@ -1,14 +1,17 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import ArrowLeft from 'lucide-react/icons/arrow-left';
 import ArrowRight from 'lucide-react/icons/arrow-right';
+import MapPin from 'lucide-react/icons/map-pin';
 import Ship from 'lucide-react/icons/ship';
 import { Children, cloneElement, isValidElement, useId } from 'react';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import PlaceSearch from '@/components/mariwaze/place-search';
 import type { Place } from '@/components/mariwaze/place-search';
+import type { NavigationPoint } from '@/components/mariwaze/planner-map';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { gpsPlace, gpsPlaceFromReference } from '@/lib/gps-place';
 import { appRoutes } from '@/lib/mariwaze-routes';
 
 type CruiseForm = {
@@ -33,7 +36,6 @@ type Prefill = {
     destination_place?: string | null;
 };
 const PlannerMap = lazy(() => import('@/components/mariwaze/planner-map'));
-const ignoreMapClick = () => {};
 
 export default function CreateCruise({
     cruise,
@@ -82,7 +84,32 @@ export default function CreateCruise({
         data.departure_port.trim() !== '' &&
         data.destination_port.trim() !== '' &&
         calculation?.key !== calculationKey;
-    const [locations, setLocations] = useState<Record<string, Place>>({});
+    const [picking, setPicking] = useState<'departure' | 'destination'>(
+        'departure',
+    );
+    const [locations, setLocations] = useState<Record<string, Place>>(() => {
+        const start = gpsPlaceFromReference(
+            cruise?.departure_place ?? prefill?.departure_place,
+        );
+        const end = gpsPlaceFromReference(
+            cruise?.destination_place ?? prefill?.destination_place,
+        );
+
+        return {
+            ...(start ? { departure: start } : {}),
+            ...(end ? { destination: end } : {}),
+        };
+    });
+    const mapPoints = useMemo<NavigationPoint[]>(
+        () =>
+            Object.entries(locations).map(([side, place]) => ({
+                name: place.name,
+                latitude: place.latitude,
+                longitude: place.longitude,
+                kind: side === 'departure' ? 'depart' : 'arrivee',
+            })),
+        [locations],
+    );
 
     useEffect(() => {
         if (
@@ -426,30 +453,102 @@ export default function CreateCruise({
                             </select>
                         </Field>
                     </section>
-                    {Object.keys(locations).length > 0 && (
+                    <section
+                        className="space-y-3"
+                        aria-label="Choisir les coordonnées sur la carte"
+                    >
+                        <div>
+                            <h2 className="font-semibold">
+                                Choisir directement sur la carte
+                            </h2>
+                            <p className="text-sm text-muted-foreground">
+                                Zoomez ou déplacez la carte dans le monde.
+                                Chaque clic conserve les coordonnées GPS
+                                exactes, même sans port répertorié.
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <Button
+                                type="button"
+                                variant={
+                                    picking === 'departure'
+                                        ? 'default'
+                                        : 'outline'
+                                }
+                                aria-pressed={picking === 'departure'}
+                                onClick={() => setPicking('departure')}
+                            >
+                                <MapPin className="size-4" />
+                                Placer le départ
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={
+                                    picking === 'destination'
+                                        ? 'default'
+                                        : 'outline'
+                                }
+                                aria-pressed={picking === 'destination'}
+                                onClick={() => setPicking('destination')}
+                            >
+                                <MapPin className="size-4" />
+                                Placer l’arrivée
+                            </Button>
+                        </div>
+                        <p
+                            role="status"
+                            className="text-sm text-muted-foreground"
+                        >
+                            {picking === 'departure'
+                                ? 'Cliquez sur la carte pour choisir le départ.'
+                                : 'Cliquez sur la carte pour choisir l’arrivée.'}
+                        </p>
                         <Suspense
                             fallback={
                                 <p role="status">Chargement de la carte…</p>
                             }
                         >
                             <PlannerMap
-                                points={Object.entries(locations).map(
-                                    ([key, place]) => ({
-                                        name: place.name,
-                                        latitude: place.latitude,
-                                        longitude: place.longitude,
-                                        kind:
-                                            key === 'departure'
-                                                ? 'depart'
-                                                : 'arrivee',
-                                    }),
-                                )}
-                                onMapClick={ignoreMapClick}
+                                points={mapPoints}
+                                onMapClick={(point) => {
+                                    const place = gpsPlace(
+                                        point.latitude,
+                                        point.longitude,
+                                    );
+                                    setLocations((previous) => ({
+                                        ...previous,
+                                        [picking]: place,
+                                    }));
+                                    setData((previous) => ({
+                                        ...previous,
+                                        [`${picking}_port`]: place.name,
+                                        [`${picking}_place`]: place.reference,
+                                    }));
+
+                                    if (picking === 'departure') {
+                                        setPicking('destination');
+                                    }
+                                }}
                                 routeAvailable={false}
-                                className="h-64"
+                                preserveViewport
+                                className="h-[420px] w-full rounded-md border"
                             />
                         </Suspense>
-                    )}
+                        <div className="grid gap-2 text-sm sm:grid-cols-2">
+                            {Object.entries(locations).map(([side, place]) => (
+                                <p key={side}>
+                                    <span className="font-medium">
+                                        {side === 'departure'
+                                            ? 'Départ'
+                                            : 'Arrivée'}{' '}
+                                        :
+                                    </span>{' '}
+                                    {place.latitude.toFixed(5)},{' '}
+                                    {place.longitude.toFixed(5)}
+                                </p>
+                            ))}
+                        </div>
+                    </section>
                     <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                         <Button asChild variant="outline">
                             <Link href="/croisieres">Annuler</Link>

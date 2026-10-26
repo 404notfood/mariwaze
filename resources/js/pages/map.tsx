@@ -16,6 +16,7 @@ import type {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { gpsPlace } from '@/lib/gps-place';
 import { appRoutes } from '@/lib/mariwaze-routes';
 
 type Route = {
@@ -363,14 +364,14 @@ export default function DemoMap({
                                 'Placez un départ et une arrivée pour calculer la route.'}
                         </span>
 
-                        {preview?.departure_port && preview?.arrival_port && (
+                        {preview && departPoint && arrivalPoint && (
                             <Button
                                 asChild
                                 size="sm"
                                 className="bg-sea-blue hover:bg-sea-blue/90"
                             >
                                 <Link
-                                    href={`/croisieres/nouvelle?departure=${encodeURIComponent(preview.departure_port)}&destination=${encodeURIComponent(preview.arrival_port)}`}
+                                    href={`/croisieres/nouvelle?${new URLSearchParams({ departure: gpsPlace(departPoint.latitude, departPoint.longitude).name, destination: gpsPlace(arrivalPoint.latitude, arrivalPoint.longitude).name, departure_place: gpsPlace(departPoint.latitude, departPoint.longitude).reference!, destination_place: gpsPlace(arrivalPoint.latitude, arrivalPoint.longitude).reference! }).toString()}`}
                                 >
                                     Créer cette croisière
                                     <ArrowRight className="size-4" />
@@ -387,6 +388,7 @@ export default function DemoMap({
 
                 <section className="overflow-hidden border border-border/60">
                     <PlannerMap
+                        preserveViewport={picking !== null}
                         points={points}
                         routeGeometry={preview?.geometry ?? route?.geometry}
                         routeAvailable={preview ? true : route?.available}
