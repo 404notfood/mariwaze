@@ -4,6 +4,7 @@ namespace Tests\Browser;
 
 use App\Services\Marine\Contracts\WeatherProviderInterface;
 use App\Services\Marine\EmodnetBathymetryService;
+use App\Services\Navigation\PortGeocoder;
 use App\Services\Navigation\SeaRouteService;
 use Illuminate\Support\ServiceProvider;
 
@@ -11,6 +12,16 @@ class BrowserServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->bind(PortGeocoder::class, fn () => new class extends PortGeocoder
+        {
+            public function search(string $query): ?array
+            {
+                return $query === 'Pointe-à-Pitre' ? [
+                    'name' => 'Pointe-à-Pitre', 'latitude' => 16.2408636, 'longitude' => -61.5334077,
+                    'region' => 'Guadeloupe', 'country_code' => 'GP',
+                ] : null;
+            }
+        });
         $this->app->bind(SeaRouteService::class, fn () => new class extends SeaRouteService
         {
             public function route(array $origin, array $destination): array

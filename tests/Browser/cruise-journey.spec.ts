@@ -205,3 +205,71 @@ test('la recherche signale une panne et les filtres sont utilisables sur mobile'
         ),
     ).toBe(true);
 });
+
+test('préparer Saint-Malo Pointe-à-Pitre en sélectionnant la Guadeloupe plutôt que son homonyme', async ({
+    page,
+}, testInfo) => {
+    await page.goto('/login');
+    await page.getByLabel('Adresse e-mail').fill('browser@example.test');
+    await page
+        .getByLabel('Mot de passe', { exact: true })
+        .fill('Browser-test-123!');
+    await page
+        .getByRole('button', { name: 'Se connecter', exact: true })
+        .click();
+    await expect(page).toHaveURL(/dashboard/);
+    await page.goto('/croisieres/nouvelle');
+    await page.getByLabel('Nom de la croisière').fill('Traversée Guadeloupe');
+    await page
+        .getByRole('combobox', { name: 'Port de départ' })
+        .fill('Saint-Malo');
+    await page.getByRole('option', { name: /Saint-Malo/ }).click();
+    await page
+        .getByRole('combobox', { name: 'Destination', exact: true })
+        .fill('Pointe-à-Pitre');
+    await expect(
+        page.getByRole('option', { name: /Pointe à Pitre.*FR/ }),
+    ).toBeVisible();
+    await page
+        .getByRole('button', { name: 'Rechercher dans le monde', exact: true })
+        .click();
+    const guadeloupe = page.getByRole('option', {
+        name: /Pointe-à-Pitre.*Guadeloupe.*GP/,
+    });
+    await expect(guadeloupe).toBeVisible();
+    await page.screenshot({
+        path: testInfo.outputPath('recherche-guadeloupe.png'),
+        fullPage: true,
+    });
+    await guadeloupe.click();
+    await expect
+        .poll(async () =>
+            Number(
+                await page
+                    .getByLabel('Durée (jours)', { exact: true })
+                    .inputValue(),
+            ),
+        )
+        .toBeGreaterThan(80);
+    const departure = new Date();
+    departure.setDate(departure.getDate() + 7);
+    await page
+        .getByLabel('Date de départ')
+        .fill(departure.toISOString().slice(0, 10));
+    await page
+        .getByRole('button', { name: 'Créer la croisière', exact: true })
+        .click();
+    await expect(
+        page.getByRole('heading', {
+            name: 'Traversée Guadeloupe',
+            exact: true,
+        }),
+    ).toBeVisible();
+    await page
+        .getByRole('button', { name: 'Calculer les itinéraires', exact: true })
+        .first()
+        .click();
+    await expect(
+        page.getByRole('heading', { name: 'Comprendre cette proposition' }),
+    ).toBeVisible();
+});

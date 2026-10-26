@@ -33,7 +33,7 @@ class PortCoordinates
     ];
 
     /** @return array{name: string, latitude: float, longitude: float}|null */
-    public function find(string $name, ?string $reference = null): ?array
+    public function find(string $name, ?string $reference = null, bool $allowGeocoding = true): ?array
     {
         if ($reference !== null) {
             $place = $this->referenced($reference);
@@ -45,6 +45,13 @@ class PortCoordinates
             return self::LOCATIONS[$normalized];
         }
 
+        // A national import can contain a minor homonym of a city abroad.
+        // An explicit reference wins; otherwise consult the global provider first.
+        $global = $allowGeocoding ? $this->geocoder->locate($name) : null;
+        if ($global !== null) {
+            return $global;
+        }
+
         $place = Schema::hasTable('place_coordinates')
             ? PlaceCoordinate::query()
                 ->where('normalized_name', $normalized)
@@ -52,7 +59,7 @@ class PortCoordinates
                 ->first()
             : null;
 
-        return $place === null ? $this->geocoder->locate($name) : [
+        return $place === null ? null : [
             'name' => $place->name,
             'latitude' => $place->latitude,
             'longitude' => $place->longitude,
@@ -65,13 +72,17 @@ class PortCoordinates
         return array_values(self::LOCATIONS);
     }
 
-    public function referenced(string $reference): Port|Anchorage|null
+    public function referenced(string $reference): Port|Anchorage|PlaceCoordinate|null
     {
-        if (! preg_match('/^(port|anchorage):([1-9][0-9]*)$/', $reference, $matches)) {
+        if (! preg_match('/^(port|anchorage|locality):([1-9][0-9]*)$/', $reference, $matches)) {
             return null;
         }
 
-        return $matches[1] === 'port' ? Port::find($matches[2]) : Anchorage::find($matches[2]);
+        return match ($matches[1]) {
+            'port' => Port::find($matches[2]),
+            'anchorage' => Anchorage::find($matches[2]),
+            'locality' => PlaceCoordinate::find($matches[2]),
+        };
     }
 
     private function normalize(string $name): string

@@ -16,10 +16,10 @@ class CruiseDurationEstimator
      * Durée conseillée, calculée sur la distance maritime réelle et le rythme
      * quotidien associé au style de navigation.
      */
-    public function estimate(string $departure, string $destination, string $style, ?string $departurePlace = null, ?string $destinationPlace = null): int
+    public function estimate(string $departure, string $destination, string $style, ?string $departurePlace = null, ?string $destinationPlace = null, bool $allowGeocoding = true): int
     {
-        $start = $this->ports->find($departure, $departurePlace);
-        $end = $this->ports->find($destination, $destinationPlace);
+        $start = $this->ports->find($departure, $departurePlace, $allowGeocoding);
+        $end = $this->ports->find($destination, $destinationPlace, $allowGeocoding);
 
         if ($start === null || $end === null) {
             return 7;

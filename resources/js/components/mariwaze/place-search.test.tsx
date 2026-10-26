@@ -34,6 +34,48 @@ function response(results: Place[]) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('PlaceSearch', () => {
+    it('only searches worldwide after an explicit click, even when local suggestions exist', async () => {
+        const guadeloupe = {
+            ...places[0],
+            name: 'Pointe-à-Pitre',
+            reference: 'locality:42',
+            country_code: 'GP',
+            latitude: 16.24,
+            longitude: -61.53,
+        };
+        const fetchMock = vi.fn().mockImplementation(async (url: string) =>
+            url.includes('worldwide=1')
+                ? {
+                      ok: true,
+                      json: async () => ({
+                          places: [guadeloupe],
+                          attribution: 'OpenStreetMap',
+                      }),
+                  }
+                : response([{ ...places[0], name: 'Pointe à Pitre' }]),
+        );
+        vi.stubGlobal('fetch', fetchMock);
+        const onSelect = vi.fn();
+        render(<Search onSelect={onSelect} />);
+        fireEvent.change(screen.getByRole('combobox'), {
+            target: { value: 'Pointe-à-Pitre' },
+        });
+        await screen.findByRole('option', { name: /Pointe à Pitre/ });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(fetchMock.mock.calls[0][0]).not.toContain('worldwide');
+        fireEvent.click(
+            screen.getByRole('button', { name: 'Rechercher dans le monde' }),
+        );
+        const result = await screen.findByRole('option', {
+            name: /Pointe-à-Pitre.*GP/,
+        });
+        expect(
+            screen.getByRole('link', { name: '© OpenStreetMap' }),
+        ).toHaveAttribute('href', 'https://www.openstreetmap.org/copyright');
+        fireEvent.click(result);
+        expect(onSelect).toHaveBeenCalledExactlyOnceWith(guadeloupe);
+    });
+
     it('selects the last result with ArrowUp, wraps to the first and selects with Enter', async () => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response(places)));
         const onSelect = vi.fn();

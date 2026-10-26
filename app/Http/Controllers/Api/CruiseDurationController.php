@@ -20,7 +20,7 @@ class CruiseDurationController extends Controller
         ]);
 
         return response()->json([
-            'days' => $estimator->estimate($data['departure_port'], $data['destination_port'], $data['navigation_style'], $data['departure_place'] ?? null, $data['destination_place'] ?? null),
+            'days' => $estimator->estimate($data['departure_port'], $data['destination_port'], $data['navigation_style'], $data['departure_place'] ?? null, $data['destination_place'] ?? null, allowGeocoding: false),
         ]);
     }
 }

@@ -14,6 +14,7 @@ class PlaceCoordinate extends Model
         'feature_class',
         'feature_code',
         'country_code',
+        'region',
     ];
 
     protected function casts(): array

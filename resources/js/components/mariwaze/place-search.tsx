@@ -30,6 +30,9 @@ export default function PlaceSearch({
     const [status, setStatus] = useState('');
     const [active, setActive] = useState(-1);
     const list = useRef<HTMLUListElement>(null);
+    const input = useRef<HTMLInputElement>(null);
+    const [worldwide, setWorldwide] = useState(false);
+    const [attribution, setAttribution] = useState('');
     const expanded = open && results.length > 0;
 
     useEffect(() => {
@@ -51,7 +54,7 @@ export default function PlaceSearch({
 
             try {
                 const response = await fetch(
-                    `/api/places?q=${encodeURIComponent(value.trim())}`,
+                    `/api/places?q=${encodeURIComponent(value.trim())}${worldwide ? '&worldwide=1' : ''}`,
                     {
                         signal: controller.signal,
                         headers: { Accept: 'application/json' },
@@ -62,13 +65,17 @@ export default function PlaceSearch({
                     throw new Error();
                 }
 
-                const data = (await response.json()) as { places: Place[] };
+                const data = (await response.json()) as {
+                    places: Place[];
+                    attribution?: string;
+                };
 
                 if (controller.signal.aborted) {
                     return;
                 }
 
                 setResults(data.places);
+                setAttribution(data.attribution ?? '');
                 setActive(-1);
                 setStatus(
                     data.places.length
@@ -89,7 +96,7 @@ export default function PlaceSearch({
             window.clearTimeout(timer);
             controller.abort();
         };
-    }, [value, open]);
+    }, [value, open, worldwide]);
 
     const choose = (place: Place) => {
         onSelect(place);
@@ -97,6 +104,7 @@ export default function PlaceSearch({
         setActive(-1);
         setResults([]);
         setStatus('');
+        setWorldwide(false);
     };
 
     return (
@@ -110,6 +118,7 @@ export default function PlaceSearch({
             }}
         >
             <Input
+                ref={input}
                 id={inputId ?? id}
                 aria-label={label}
                 role="combobox"
@@ -128,6 +137,7 @@ export default function PlaceSearch({
                     setResults([]);
                     setActive(-1);
                     setStatus('');
+                    setWorldwide(false);
                     setOpen(true);
                 }}
                 onFocus={() => setOpen(true)}
@@ -175,52 +185,6 @@ export default function PlaceSearch({
                     }
                 }}
             />
-            {open && results.length > 0 && (
-                <ul
-                    ref={list}
-                    id={`${id}-options`}
-                    role="listbox"
-                    aria-label={`Suggestions : ${label}`}
-                    className="absolute z-30 mt-1 max-h-64 w-full overflow-auto rounded-md border bg-background p-1 shadow-lg"
-                >
-                    {results.map((place, index) => (
-                        <li
-                            key={place.reference ?? `${place.name}-${index}`}
-                            role="presentation"
-                        >
-                            <button
-                                id={`${id}-${index}`}
-                                role="option"
-                                aria-selected={index === active}
-                                type="button"
-                                tabIndex={-1}
-                                className={`w-full rounded p-3 text-left text-sm hover:bg-muted ${index === active ? 'bg-muted' : ''}`}
-                                onMouseDown={(event) => event.preventDefault()}
-                                onClick={() => choose(place)}
-                            >
-                                <span className="block font-medium">
-                                    {place.name}
-                                </span>
-                                <span className="block text-xs text-muted-foreground">
-                                    {[
-                                        place.region,
-                                        place.country_code,
-                                        place.type === 'anchorage'
-                                            ? 'Mouillage'
-                                            : place.type === 'port'
-                                              ? 'Port'
-                                              : 'Localité',
-                                    ]
-                                        .filter(Boolean)
-                                        .join(' · ')}{' '}
-                                    — {place.latitude.toFixed(3)},{' '}
-                                    {place.longitude.toFixed(3)}
-                                </span>
-                            </button>
-                        </li>
-                    ))}
-                </ul>
-            )}
             <p
                 id={`${id}-status`}
                 role="status"
@@ -232,6 +196,94 @@ export default function PlaceSearch({
                         : status
                     : ''}
             </p>
+            {open && value.trim().length >= 2 && (
+                <div className="absolute z-30 mt-1 w-full rounded-md border bg-background shadow-lg">
+                    {open && results.length > 0 && (
+                        <ul
+                            ref={list}
+                            id={`${id}-options`}
+                            role="listbox"
+                            aria-label={`Suggestions : ${label}`}
+                            className="max-h-64 overflow-auto p-1"
+                        >
+                            {results.map((place, index) => (
+                                <li
+                                    key={
+                                        place.reference ??
+                                        `${place.name}-${index}`
+                                    }
+                                    role="presentation"
+                                >
+                                    <button
+                                        id={`${id}-${index}`}
+                                        role="option"
+                                        aria-selected={index === active}
+                                        type="button"
+                                        tabIndex={-1}
+                                        className={`w-full rounded p-3 text-left text-sm hover:bg-muted ${index === active ? 'bg-muted' : ''}`}
+                                        onMouseDown={(event) =>
+                                            event.preventDefault()
+                                        }
+                                        onClick={() => choose(place)}
+                                    >
+                                        <span className="block font-medium">
+                                            {place.name}
+                                        </span>
+                                        <span className="block text-xs text-muted-foreground">
+                                            {[
+                                                place.region,
+                                                place.country_code,
+                                                place.type === 'anchorage'
+                                                    ? 'Mouillage'
+                                                    : place.type === 'port'
+                                                      ? 'Port'
+                                                      : 'Localité',
+                                            ]
+                                                .filter(Boolean)
+                                                .join(' · ')}{' '}
+                                            — {place.latitude.toFixed(3)},{' '}
+                                            {place.longitude.toFixed(3)}
+                                        </span>
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t p-3 text-xs">
+                        <button
+                            type="button"
+                            className="text-sea-blue underline underline-offset-2"
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={() => {
+                                input.current?.focus();
+                                setResults([]);
+                                setActive(-1);
+                                setStatus('Recherche en cours…');
+                                setWorldwide((previous) => !previous);
+                            }}
+                        >
+                            {worldwide
+                                ? 'Revenir au catalogue local'
+                                : 'Rechercher dans le monde'}
+                        </button>
+                        {worldwide && attribution && (
+                            <a
+                                href={
+                                    attribution === 'Mapbox'
+                                        ? 'https://www.mapbox.com/about/maps/'
+                                        : 'https://www.openstreetmap.org/copyright'
+                                }
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-muted-foreground underline"
+                            >
+                                © {attribution}
+                            </a>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -29,7 +29,7 @@ class CruiseRequest extends FormRequest
             'departure_place' => ['nullable', 'string', 'max:80'],
             'destination_place' => ['nullable', 'string', 'max:80'],
             'departure_date' => ['required', 'date', 'after_or_equal:today'],
-            'duration_days' => ['nullable', 'required_unless:auto_duration,true', 'integer', 'between:1,180'],
+            'duration_days' => [Rule::excludeIf($this->boolean('auto_duration')), 'required', 'integer', 'between:1,180'],
             'auto_duration' => ['required', 'boolean'],
             'crew_count' => ['required', 'integer', 'between:1,20'],
             'navigation_area' => ['nullable', Rule::enum(NavigationArea::class)],

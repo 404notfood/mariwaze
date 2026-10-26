@@ -45,6 +45,7 @@ Les tests frontend Vitest couvrent notamment l'encodage des SVG et le rendu sûr
 ## Préparation et utilisation à bord
 
 - Les suggestions de lieux indiquent le pays et les coordonnées. Une sélection de port ou de mouillage conserve son identifiant pour distinguer les homonymes ; modifier le texte efface cette sélection. Les localités du catalogue restent disponibles en complément.
+- **Rechercher dans le monde**, sous les suggestions, interroge explicitement le fournisseur de géocodage configuré. Les résultats permanents sont conservés avec leur région et une référence de localité : une ville d'outre-mer ne peut plus être remplacée par un homonyme métropolitain après sa sélection. Les imports GeoNames peuvent être étendus par pays (`--country=GP`, `--country=PT`, etc.). Les données Mapbox temporaires ne sont pas enregistrées dans ce catalogue.
 - La création permet de choisir un bateau et une zone de navigation. Les scénarios affichent leur rythme visé, leur étape la plus longue, les critères pondérés et le nombre d'étapes disposant d'une météo complète.
 - Une prévision partielle ne reçoit pas de note favorable : la note est plafonnée à 50, tout en conservant les pénalités des conditions dangereuses connues. La couverture mesure la part des valeurs horaires de vent, rafales et vagues disponibles sur la fenêtre demandée.
 - L'exploration filtre les escales avant de limiter les résultats : profondeur minimale, service au port, orientation protégée au mouillage et bateau. La profondeur requise pour le bateau inclut 0,5 m de marge. Les profondeurs inconnues sont exclues lorsqu'un seuil est demandé ; les dimensions inconnues restent à confirmer.
@@ -72,6 +73,8 @@ php artisan waterways:import-overpass /chemin/vers/export.json
 ```
 
 Les API tierces et leurs délais sont configurés dans `.env.example`. En production, utiliser une instance Nominatim autorisée ou auto-hébergée et un User-Agent avec une véritable adresse de contact.
+
+L'autocomplétion et les estimations automatiques de durée n'appellent pas le géocodeur distant. Le service public Nominatim reste réservé au développement, aux recherches explicites mises en cache et limitées à une requête par seconde pour l'application ; respecter sa [politique d'utilisation](https://operations.osmfoundation.org/policies/nominatim/), notamment l'interdiction de l'autocomplétion distante. Sous Windows, renseigner de préférence le chemin absolu d'un interpréteur Python compatible avec les paquets installés dans `.python-packages` dans `SEAROUTE_PYTHON`.
 
 ## Déploiement
 
