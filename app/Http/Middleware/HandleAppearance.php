@@ -18,6 +18,10 @@ class HandleAppearance
     {
         View::share('appearance', $request->cookie('appearance') ?? 'dark');
 
+        // Design de l'interface : « passerelle » (par défaut) ou « large » (Au large).
+        $design = $request->cookie('design');
+        View::share('design', in_array($design, ['passerelle', 'large'], true) ? $design : 'passerelle');
+
         return $next($request);
     }
 }

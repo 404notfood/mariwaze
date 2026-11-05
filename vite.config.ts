@@ -16,6 +16,10 @@ export default defineConfig({
                     weights: [400, 500, 600, 700],
                     optimizedFallbacks: false,
                 }),
+                bunny('Albert Sans', {
+                    weights: [300, 400, 500, 600, 700],
+                    optimizedFallbacks: false,
+                }),
                 bunny('JetBrains Mono', {
                     weights: [400, 500, 600],
                     optimizedFallbacks: false,

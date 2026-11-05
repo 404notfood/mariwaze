@@ -7,6 +7,7 @@ import Settings2 from 'lucide-react/icons/settings-2';
 import Shield from 'lucide-react/icons/shield';
 import Ship from 'lucide-react/icons/ship';
 import AppLogo from '@/components/app-logo';
+import { DesignSwitcher } from '@/components/mariwaze/design-switcher';
 import ThemeToggle from '@/components/mariwaze/theme-toggle';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -88,8 +89,9 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
-                <div className="flex items-center justify-between px-2 pb-2">
+                <div className="flex items-center gap-2 px-2 pb-2 group-data-[collapsible=icon]:px-0">
                     <ThemeToggle />
+                    <DesignSwitcher className="group-data-[collapsible=icon]:hidden" />
                 </div>
                 <NavFooter items={footerNavItems} className="mt-auto" />
                 <NavUser />

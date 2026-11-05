@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['dark' => ($appearance ?? 'dark') == 'dark'])>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-design="{{ $design ?? 'passerelle' }}" @class(['dark' => ($appearance ?? 'dark') == 'dark'])>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -27,6 +27,14 @@
 
             html.dark {
                 background-color: #0a1118;
+            }
+
+            html[data-design="large"] {
+                background-color: #eef3f1;
+            }
+
+            html[data-design="large"].dark {
+                background-color: #0d1b1d;
             }
         </style>
 
