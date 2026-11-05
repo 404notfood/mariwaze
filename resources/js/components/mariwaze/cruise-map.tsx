@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
+import type { ComponentProps } from 'react';
 import PlannerMap from '@/components/mariwaze/planner-map';
 import type {
+    FitPadding,
     HazardAlert,
     NavigationPoint,
 } from '@/components/mariwaze/planner-map';
@@ -23,6 +25,10 @@ type Props = {
     routeAvailable?: boolean;
     hazards?: HazardAlert[];
     className?: string;
+    /** Encarts (itinéraire, légende, alertes) ; masqués quand l'écran les affiche ailleurs. */
+    chrome?: boolean;
+    zoomPosition?: ComponentProps<typeof PlannerMap>['zoomPosition'];
+    fitPadding?: FitPadding;
 };
 
 /** Repli quand aucune route n'a encore été calculée pour la croisière. */
@@ -98,6 +104,9 @@ export default function CruiseMap({
     routeAvailable = true,
     hazards = [],
     className,
+    chrome = true,
+    zoomPosition,
+    fitPadding,
 }: Props) {
     const points = useMemo((): NavigationPoint[] => {
         const first =
@@ -147,66 +156,73 @@ export default function CruiseMap({
                 hazards={hazards}
                 onMapClick={ignoreClick}
                 className="size-full"
+                zoomPosition={zoomPosition}
+                fitPadding={fitPadding}
             />
 
-            <div className="absolute top-3 left-14 z-[500] max-w-[calc(100%_-_4.5rem)] rounded-sm border border-line-strong bg-background/90 px-3 py-2 text-sm break-words">
-                <p className="pw-label">Itinéraire</p>
-                <p className="mt-0.5 font-semibold tracking-[0.02em] uppercase">
-                    {departure} → {destination}
-                </p>
-                {stops.length > 0 && (
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                        {stops.length} escale{stops.length > 1 ? 's' : ''}
-                        {anchorages > 0 &&
-                            ` dont ${anchorages} mouillage${anchorages > 1 ? 's' : ''}`}
-                    </p>
-                )}
-                {points.length < 2 && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                        Coordonnées du port en attente.
-                    </p>
-                )}
-            </div>
+            {chrome && (
+                <>
+                    <div className="absolute top-3 left-14 z-[500] max-w-[calc(100%_-_4.5rem)] rounded-sm border border-line-strong bg-background/90 px-3 py-2 text-sm break-words">
+                        <p className="pw-label">Itinéraire</p>
+                        <p className="mt-0.5 font-semibold tracking-[0.02em] uppercase">
+                            {departure} → {destination}
+                        </p>
+                        {stops.length > 0 && (
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                                {stops.length} escale
+                                {stops.length > 1 ? 's' : ''}
+                                {anchorages > 0 &&
+                                    ` dont ${anchorages} mouillage${anchorages > 1 ? 's' : ''}`}
+                            </p>
+                        )}
+                        {points.length < 2 && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                Coordonnées du port en attente.
+                            </p>
+                        )}
+                    </div>
 
-            {onRouteHazards.length > 0 && (
-                <div className="absolute bottom-4 left-4 z-[500] rounded-sm border border-bad bg-background/90 px-3 py-1.5 font-mono text-[11px] tracking-[0.04em] text-bad uppercase">
-                    ⚠ {onRouteHazards.length} zone
-                    {onRouteHazards.length > 1 ? 's' : ''} de vigilance sur le
-                    trajet
-                </div>
-            )}
-
-            {!routeAvailable && (
-                <div className="absolute bottom-4 left-4 z-[500] rounded-sm border border-warn bg-background/90 px-3 py-1.5 font-mono text-[11px] tracking-[0.04em] text-warn uppercase">
-                    Route non calculée : tracé indicatif.
-                </div>
-            )}
-
-            <div className="absolute right-4 bottom-4 z-[500] hidden rounded-sm border border-line-strong bg-background/90 p-2.5 font-mono text-[10px] tracking-[0.08em] uppercase sm:block">
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-                    {legendEntries.map((entry) => (
-                        <span
-                            key={entry.label}
-                            className="flex items-center gap-1.5 text-muted-foreground"
-                        >
-                            {entry.symbol}
-                            {entry.label}
-                        </span>
-                    ))}
-                    {hazards.length > 0 && (
-                        <>
-                            <span className="flex items-center gap-1.5 text-muted-foreground">
-                                <span className="size-4 rounded-full border-2 border-dashed border-[#dc2626] bg-[#dc2626]/10" />
-                                Danger
-                            </span>
-                            <span className="flex items-center gap-1.5 text-muted-foreground">
-                                <span className="size-4 rounded-full border-2 border-dashed border-safety-orange bg-safety-orange/10" />
-                                Vigilance
-                            </span>
-                        </>
+                    {onRouteHazards.length > 0 && (
+                        <div className="absolute bottom-4 left-4 z-[500] rounded-sm border border-bad bg-background/90 px-3 py-1.5 font-mono text-[11px] tracking-[0.04em] text-bad uppercase">
+                            ⚠ {onRouteHazards.length} zone
+                            {onRouteHazards.length > 1 ? 's' : ''} de vigilance
+                            sur le trajet
+                        </div>
                     )}
-                </div>
-            </div>
+
+                    {!routeAvailable && (
+                        <div className="absolute bottom-4 left-4 z-[500] rounded-sm border border-warn bg-background/90 px-3 py-1.5 font-mono text-[11px] tracking-[0.04em] text-warn uppercase">
+                            Route non calculée : tracé indicatif.
+                        </div>
+                    )}
+
+                    <div className="absolute right-4 bottom-4 z-[500] hidden rounded-sm border border-line-strong bg-background/90 p-2.5 font-mono text-[10px] tracking-[0.08em] uppercase sm:block">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                            {legendEntries.map((entry) => (
+                                <span
+                                    key={entry.label}
+                                    className="flex items-center gap-1.5 text-muted-foreground"
+                                >
+                                    {entry.symbol}
+                                    {entry.label}
+                                </span>
+                            ))}
+                            {hazards.length > 0 && (
+                                <>
+                                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                                        <span className="size-4 rounded-full border-2 border-dashed border-[#dc2626] bg-[#dc2626]/10" />
+                                        Danger
+                                    </span>
+                                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                                        <span className="size-4 rounded-full border-2 border-dashed border-safety-orange bg-safety-orange/10" />
+                                        Vigilance
+                                    </span>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     );
 }

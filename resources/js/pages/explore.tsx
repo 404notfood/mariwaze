@@ -7,7 +7,7 @@ import MapPin from 'lucide-react/icons/map-pin';
 import Route from 'lucide-react/icons/route';
 import Search from 'lucide-react/icons/search';
 import Ship from 'lucide-react/icons/ship';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
     Chip,
     Instrument,
@@ -16,10 +16,14 @@ import {
 } from '@/components/mariwaze/passerelle';
 import PlaceSearch from '@/components/mariwaze/place-search';
 import type { Place } from '@/components/mariwaze/place-search';
+import PlannerMap from '@/components/mariwaze/planner-map';
+import type { NavigationPoint } from '@/components/mariwaze/planner-map';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useDesign } from '@/hooks/use-design';
 import { appRoutes } from '@/lib/mariwaze-routes';
+import { cn } from '@/lib/utils';
 
 type Spot = {
     slug: string;
@@ -86,6 +90,21 @@ export default function Explore({
             ? departurePlace.reference !== destinationPlace.reference
             : departure.trim().toLocaleLowerCase() !==
               destination.trim().toLocaleLowerCase());
+
+    const { design } = useDesign();
+
+    // « Au large » : carte plein écran, liste et fiche en feuilles flottantes.
+    if (design === 'large') {
+        return (
+            <ExploreLarge
+                key={JSON.stringify([filters, pagination.current_page])}
+                filters={filters}
+                spots={spots}
+                boats={boats}
+                pagination={pagination}
+            />
+        );
+    }
 
     return (
         <>
@@ -547,3 +566,434 @@ function FilterChip({
 Explore.layout = () => ({
     breadcrumbs: [{ title: 'Ports & mouillages', href: appRoutes.explore }],
 });
+
+/* ------------------------------------------------------------------
+ * Design « Au large » : la carte des escales en plein écran,
+ * la liste à gauche et la fiche de l'escale choisie à droite.
+ * ------------------------------------------------------------------ */
+
+// Cadrage des escales hors des feuilles (liste à gauche, fiche à droite).
+const EXPLORE_FIT_PADDING = {
+    paddingTopLeft: [440, 110] as [number, number],
+    paddingBottomRight: [390, 40] as [number, number],
+};
+
+const largeSheet =
+    'relative rounded-[24px] bg-card shadow-[var(--soft-shadow)] lg:absolute';
+
+const serviceLabels: Record<string, string> = {
+    has_fuel: 'Carburant',
+    has_water: 'Eau',
+    has_provisions: 'Avitaillement',
+};
+
+function depthLabel(spot: Spot): string | null {
+    if (spot.depth === null) {
+        return null;
+    }
+
+    return typeof spot.depth === 'number'
+        ? `${nf.format(spot.depth)} m`
+        : String(spot.depth);
+}
+
+function ExploreLarge({
+    filters,
+    spots,
+    boats,
+    pagination,
+}: Pick<Props, 'filters' | 'spots' | 'boats' | 'pagination'>) {
+    const [search, setSearch] = useState(filters.q ?? '');
+    const [pending, setPending] = useState(false);
+    const [selectedKey, setSelectedKey] = useState<string | null>(
+        spots[0] ? `${spots[0].type}-${spots[0].slug}` : null,
+    );
+
+    const selected =
+        spots.find((spot) => `${spot.type}-${spot.slug}` === selectedKey) ??
+        null;
+    const boat = boats[0] ?? null;
+    const boatFilterOn =
+        boat !== null && filters.boat_id?.toString() === boat.id.toString();
+
+    const visit = (changes: Partial<Record<string, string | null>>) => {
+        const next: Record<string, string | undefined> = {
+            q: search || undefined,
+            type: filters.type ?? undefined,
+            min_depth: filters.min_depth || undefined,
+            service: filters.service || undefined,
+            protection: filters.protection || undefined,
+            boat_id: filters.boat_id?.toString() || undefined,
+            country: filters.country || undefined,
+        };
+
+        Object.entries(changes).forEach(([key, value]) => {
+            next[key] = value || undefined;
+        });
+
+        router.get(appRoutes.explore, next, {
+            preserveState: true,
+            preserveScroll: true,
+            onStart: () => setPending(true),
+            onFinish: () => setPending(false),
+        });
+    };
+
+    const points = useMemo(
+        (): NavigationPoint[] =>
+            spots.map((spot) => ({
+                name: spot.name,
+                latitude: spot.latitude,
+                longitude: spot.longitude,
+                kind: spot.type === 'port' ? 'port' : 'mouillage',
+            })),
+        [spots],
+    );
+
+    const selectFromMap = (point: NavigationPoint) => {
+        const spot = spots.find(
+            (item) =>
+                item.name === point.name &&
+                Math.abs(item.latitude - point.latitude) < 1e-6,
+        );
+
+        if (spot) {
+            setSelectedKey(`${spot.type}-${spot.slug}`);
+        }
+    };
+
+    const typeChip = (type: string | null, label: string) => {
+        const active = (filters.type ?? null) === type;
+
+        return (
+            <button
+                type="button"
+                disabled={pending}
+                aria-pressed={active}
+                onClick={() => visit({ type })}
+                className={cn(
+                    'rounded-full px-3 py-1 text-[13px] font-medium transition-colors',
+                    active
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-background hover:bg-accent',
+                )}
+            >
+                {label}
+            </button>
+        );
+    };
+
+    return (
+        <>
+            <Head title="Ports et mouillages" />
+            <div className="relative flex flex-col gap-3 pb-4 lg:fixed lg:inset-0 lg:block lg:pb-0">
+                <div className="mw-fullbleed-map relative isolate h-[55vh] bg-[var(--chart-water-1)] lg:absolute lg:inset-0 lg:h-auto">
+                    <PlannerMap
+                        points={points}
+                        routeAvailable={false}
+                        onMapClick={selectFromMap}
+                        className="absolute inset-0"
+                        zoomPosition="topright"
+                        fitPadding={EXPLORE_FIT_PADDING}
+                    />
+                </div>
+
+                {/* Liste */}
+                <aside
+                    className={cn(
+                        largeSheet,
+                        'mx-4 flex flex-col gap-3 p-5 lg:top-[88px] lg:bottom-5 lg:left-5 lg:mx-0 lg:w-[380px]',
+                    )}
+                >
+                    <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em]">
+                        Escales et mouillages
+                    </h1>
+                    <form
+                        onSubmit={(event) => {
+                            event.preventDefault();
+                            visit({});
+                        }}
+                        className="flex h-11 items-center gap-2.5 rounded-full bg-background px-4 text-muted-foreground"
+                    >
+                        {pending ? (
+                            <LoaderCircle className="size-4 shrink-0 animate-spin" />
+                        ) : (
+                            <Search className="size-4 shrink-0" />
+                        )}
+                        <input
+                            aria-label="Rechercher une escale"
+                            maxLength={120}
+                            value={search}
+                            onChange={(event) => setSearch(event.target.value)}
+                            placeholder="Un port, une baie, une île…"
+                            className="h-full min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                        />
+                    </form>
+
+                    <div className="flex flex-wrap gap-1.5">
+                        {typeChip(null, 'Tout')}
+                        {typeChip('port', 'Ports')}
+                        {typeChip('anchorage', 'Mouillages')}
+                        {boat && (
+                            <button
+                                type="button"
+                                disabled={pending}
+                                aria-pressed={boatFilterOn}
+                                onClick={() =>
+                                    visit({
+                                        boat_id: boatFilterOn
+                                            ? null
+                                            : boat.id.toString(),
+                                    })
+                                }
+                                className={cn(
+                                    'rounded-full px-3 py-1 text-[13px] font-medium transition-colors',
+                                    boatFilterOn
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-background hover:bg-accent',
+                                )}
+                            >
+                                Accessible à {nf.format(boat.draft)} m
+                            </button>
+                        )}
+                        {Object.entries(serviceLabels).map(([value, label]) => {
+                            const active = filters.service === value;
+
+                            return (
+                                <button
+                                    key={value}
+                                    type="button"
+                                    disabled={pending}
+                                    aria-pressed={active}
+                                    onClick={() =>
+                                        visit({
+                                            service: active ? null : value,
+                                            protection: null,
+                                        })
+                                    }
+                                    className={cn(
+                                        'rounded-full px-3 py-1 text-[13px] font-medium transition-colors',
+                                        active
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'bg-background hover:bg-accent',
+                                    )}
+                                >
+                                    {label}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <p role="status" className="text-xs text-muted-foreground">
+                        {pagination.total === 0
+                            ? 'Aucune escale trouvée'
+                            : `${pagination.from}–${pagination.to} sur ${nf.format(pagination.total)} escale${pagination.total > 1 ? 's' : ''}`}
+                    </p>
+
+                    <ul className="-mx-2 min-h-0 flex-1 space-y-0.5 overflow-y-auto">
+                        {spots.map((spot) => {
+                            const key = `${spot.type}-${spot.slug}`;
+                            const depth = depthLabel(spot);
+
+                            return (
+                                <li key={key}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedKey(key)}
+                                        aria-current={
+                                            key === selectedKey
+                                                ? 'true'
+                                                : undefined
+                                        }
+                                        className={cn(
+                                            'grid w-full grid-cols-[10px_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors',
+                                            key === selectedKey
+                                                ? 'bg-accent'
+                                                : 'hover:bg-background',
+                                        )}
+                                    >
+                                        <i
+                                            className={cn(
+                                                'size-2.5 rounded-full',
+                                                depth === null
+                                                    ? 'bg-warn'
+                                                    : 'bg-good',
+                                            )}
+                                        />
+                                        <span className="min-w-0">
+                                            <span className="block truncate text-[15px] font-semibold">
+                                                {spot.name}
+                                            </span>
+                                            <span className="block truncate text-xs text-muted-foreground">
+                                                {spot.type === 'port'
+                                                    ? 'Port'
+                                                    : 'Mouillage'}
+                                                {spot.region
+                                                    ? ` · ${spot.region}`
+                                                    : ''}
+                                            </span>
+                                        </span>
+                                        <span className="text-right text-xs text-muted-foreground tabular-nums">
+                                            {depth ?? 'Fond ?'}
+                                        </span>
+                                    </button>
+                                </li>
+                            );
+                        })}
+                        {spots.length === 0 && (
+                            <li className="px-3 py-6 text-sm text-muted-foreground">
+                                Aucune escale ne correspond à cette recherche.
+                            </li>
+                        )}
+                    </ul>
+
+                    {pagination.last_page > 1 && (
+                        <nav
+                            aria-label="Pagination des escales"
+                            className="flex items-center justify-between gap-2 border-t border-border pt-3"
+                        >
+                            {pagination.previous_url ? (
+                                <Link
+                                    href={pagination.previous_url}
+                                    preserveState
+                                    className="rounded-full bg-background px-3 py-1.5 text-sm font-medium hover:bg-accent"
+                                >
+                                    ← Précédent
+                                </Link>
+                            ) : (
+                                <span />
+                            )}
+                            <span className="text-xs text-muted-foreground">
+                                Page {pagination.current_page} sur{' '}
+                                {pagination.last_page}
+                            </span>
+                            {pagination.next_url ? (
+                                <Link
+                                    href={pagination.next_url}
+                                    preserveState
+                                    className="rounded-full bg-background px-3 py-1.5 text-sm font-medium hover:bg-accent"
+                                >
+                                    Suivant →
+                                </Link>
+                            ) : (
+                                <span />
+                            )}
+                        </nav>
+                    )}
+                </aside>
+
+                {/* Fiche de l'escale choisie */}
+                {selected && (
+                    <section
+                        className={cn(
+                            largeSheet,
+                            'mx-4 p-6 lg:right-5 lg:bottom-8 lg:mx-0 lg:w-[350px]',
+                        )}
+                    >
+                        <span
+                            className={cn(
+                                'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold',
+                                depthLabel(selected) === null
+                                    ? 'bg-warn-soft'
+                                    : 'bg-good-soft',
+                            )}
+                        >
+                            <i
+                                className={cn(
+                                    'size-1.5 rounded-full',
+                                    depthLabel(selected) === null
+                                        ? 'bg-warn'
+                                        : 'bg-good',
+                                )}
+                            />
+                            {depthLabel(selected) === null
+                                ? 'Profondeur à vérifier'
+                                : selected.type === 'port'
+                                  ? 'Port'
+                                  : 'Mouillage'}
+                        </span>
+                        <h2 className="mt-2 text-[22px] leading-7 font-semibold tracking-[-0.01em]">
+                            {selected.name}
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                            {selected.region ??
+                                `${selected.latitude.toFixed(3)}, ${selected.longitude.toFixed(3)}`}
+                            {selected.country_code
+                                ? ` · ${selected.country_code}`
+                                : ''}
+                        </p>
+
+                        <div className="my-4 grid grid-cols-3 gap-2">
+                            <div className="rounded-2xl bg-background px-3 py-2">
+                                <p className="font-medium tabular-nums">
+                                    {depthLabel(selected) ?? '—'}
+                                </p>
+                                <p className="text-[11px] text-muted-foreground">
+                                    profondeur
+                                </p>
+                            </div>
+                            <div className="rounded-2xl bg-background px-3 py-2">
+                                <p className="font-medium tabular-nums">
+                                    {selected.rating !== null
+                                        ? `★ ${selected.rating}`
+                                        : '—'}
+                                </p>
+                                <p className="text-[11px] text-muted-foreground">
+                                    {selected.reviews_count} avis
+                                </p>
+                            </div>
+                            <div className="rounded-2xl bg-background px-3 py-2">
+                                <p className="truncate font-medium">
+                                    {selected.protected_from?.length
+                                        ? selected.protected_from.join(' ')
+                                        : '—'}
+                                </p>
+                                <p className="text-[11px] text-muted-foreground">
+                                    abri
+                                </p>
+                            </div>
+                        </div>
+
+                        {!!(
+                            selected.services?.length || selected.tags?.length
+                        ) && (
+                            <div className="mb-4 flex flex-wrap gap-1.5">
+                                {(selected.services ?? selected.tags ?? [])
+                                    .slice(0, 5)
+                                    .map((item) => (
+                                        <span
+                                            key={item}
+                                            className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium"
+                                        >
+                                            {item}
+                                        </span>
+                                    ))}
+                            </div>
+                        )}
+
+                        <div className="flex flex-wrap gap-2">
+                            <Button asChild>
+                                <Link
+                                    href={
+                                        selected.type === 'port'
+                                            ? appRoutes.port(selected.slug)
+                                            : appRoutes.anchorage(selected.slug)
+                                    }
+                                >
+                                    Voir la fiche
+                                </Link>
+                            </Button>
+                            <Button asChild variant="secondary">
+                                <Link
+                                    href={`/croisieres/nouvelle?${new URLSearchParams({ destination: selected.name }).toString()}`}
+                                >
+                                    Y aller
+                                </Link>
+                            </Button>
+                        </div>
+                    </section>
+                )}
+            </div>
+        </>
+    );
+}

@@ -22,10 +22,16 @@ export const designs: { value: Design; label: string; description: string }[] =
     ];
 
 const listeners = new Set<() => void>();
-let currentDesign: Design = 'passerelle';
-
 const isDesign = (value: unknown): value is Design =>
     value === 'passerelle' || value === 'large';
+
+// Le serveur pose data-design sur <html> : on le lit dès le chargement du module,
+// pour que le premier rendu React utilise déjà la bonne mise en page.
+let currentDesign: Design =
+    typeof document !== 'undefined' &&
+    isDesign(document.documentElement.dataset.design)
+        ? document.documentElement.dataset.design
+        : 'passerelle';
 
 const setCookie = (value: Design): void => {
     if (typeof document === 'undefined') {
@@ -59,6 +65,7 @@ export function initializeDesign(): void {
           : 'passerelle';
 
     applyDesign(currentDesign);
+    listeners.forEach((listener) => listener());
 }
 
 const subscribe = (callback: () => void) => {

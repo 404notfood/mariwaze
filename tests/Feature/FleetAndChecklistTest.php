@@ -4,9 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\Boat;
 use App\Models\ChecklistTemplate;
+use App\Models\CruiseChecklistItem;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class FleetAndChecklistTest extends TestCase
@@ -100,5 +102,37 @@ class FleetAndChecklistTest extends TestCase
             'label' => 'Carburant',
             'quantity' => '90 L',
         ]);
+    }
+
+    public function test_the_cruise_list_reports_checklist_progress(): void
+    {
+        $user = User::factory()->create();
+        $template = ChecklistTemplate::create(['name' => 'Côtier', 'navigation_area' => 'coastal']);
+        $section = $template->sections()->create(['name' => 'Sécurité', 'position' => 1]);
+        $section->items()->create(['label' => 'Gilets', 'position' => 1]);
+        $section->items()->create(['label' => 'Feux à main', 'position' => 2]);
+        $section->items()->create(['label' => 'VHF', 'position' => 3]);
+        $section->items()->create(['label' => 'Trousse de secours', 'position' => 4]);
+
+        $this->actingAs($user)->post('/croisieres', [
+            'title' => 'Tour de Bréhat',
+            'departure_port' => 'Paimpol',
+            'destination_port' => 'Lézardrieux',
+            'departure_date' => now()->addWeek()->toDateString(),
+            'duration_days' => 2,
+            'auto_duration' => false,
+            'crew_count' => 2,
+            'navigation_style' => 'Confort',
+            'navigation_area' => 'coastal',
+        ])->assertRedirect();
+
+        CruiseChecklistItem::query()->where('label', 'Gilets')->update(['checked' => true]);
+
+        $this->actingAs($user)
+            ->get('/croisieres')
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('cruises/index')
+                ->where('cruises.0.title', 'Tour de Bréhat')
+                ->where('cruises.0.progress', 25));
     }
 }

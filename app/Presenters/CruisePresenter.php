@@ -4,6 +4,7 @@ namespace App\Presenters;
 
 use App\Models\Boat;
 use App\Models\Cruise;
+use App\Models\CruiseChecklistItem;
 use App\Models\CruiseRoute;
 use App\Models\RouteSegment;
 use App\Services\Itinerary\CruiseDurationEstimator;
@@ -21,9 +22,26 @@ class CruisePresenter
     /** @return array<string, mixed> */
     public function summary(Cruise $cruise): array
     {
-        return array_intersect_key($this->detail($cruise), array_flip([
-            'slug', 'title', 'route', 'departure_date', 'duration', 'status', 'progress', 'miles', 'stops', 'style', 'route_available',
+        $summary = array_intersect_key($this->detail($cruise), array_flip([
+            'slug', 'title', 'route', 'departure_date', 'duration', 'status', 'miles', 'stops', 'style', 'route_available',
         ]));
+
+        return [...$summary, 'progress' => $this->progress($cruise)];
+    }
+
+    /** Part de la checklist de préparation déjà cochée, en pourcentage (0 sans checklist). */
+    public function progress(Cruise $cruise): int
+    {
+        $items = CruiseChecklistItem::query()
+            ->whereHas('checklist', fn ($checklist) => $checklist->where('cruise_id', $cruise->id));
+
+        $total = (clone $items)->count();
+
+        if ($total === 0) {
+            return 0;
+        }
+
+        return (int) round((clone $items)->where('checked', true)->count() / $total * 100);
     }
 
     /** @return array<string, mixed> */

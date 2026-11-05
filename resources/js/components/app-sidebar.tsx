@@ -28,11 +28,12 @@ type PageProps = {
     auth: Auth;
 };
 
-export function AppSidebar() {
+/** Entrées de navigation principales, partagées par la barre latérale (Passerelle) et la barre flottante (Au large). */
+export function useMainNavItems(): NavItem[] {
     const routes = useMariwazeRoutes();
     const { auth } = usePage<PageProps>().props;
 
-    const mainNavItems: NavItem[] = [
+    return [
         { title: 'Accueil', href: routes.dashboard, icon: LayoutGrid },
         {
             title: 'Mes croisières',
@@ -65,6 +66,11 @@ export function AppSidebar() {
               ]
             : []),
     ];
+}
+
+export function AppSidebar() {
+    const routes = useMariwazeRoutes();
+    const mainNavItems = useMainNavItems();
 
     const footerNavItems: NavItem[] = [
         { title: 'Configurer bateau', href: routes.boatSetup, icon: Ship },
