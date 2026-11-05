@@ -49,13 +49,27 @@ const SEVERITY_COLORS: Record<HazardAlert['severity'], string> = {
     info: '#47b5ff',
 };
 
+// Couleurs Passerelle, résolues par le navigateur (styles en ligne des marqueurs).
 const POINT_COLORS: Record<NavigationPoint['kind'], string> = {
-    depart: '#15803d',
-    arrivee: '#06283d',
-    port: '#1363df',
-    mouillage: '#0e9f6e',
-    point: '#64748b',
+    depart: 'var(--route)',
+    arrivee: 'var(--route)',
+    port: 'var(--primary)',
+    mouillage: 'var(--good)',
+    point: 'var(--muted-foreground)',
 };
+
+/** Lit un jeton du thème pour les tracés SVG de Leaflet (qui n'acceptent pas var()). */
+function themeColor(name: string, fallback: string): string {
+    if (typeof window === 'undefined') {
+        return fallback;
+    }
+
+    const value = getComputedStyle(document.documentElement)
+        .getPropertyValue(name)
+        .trim();
+
+    return value || fallback;
+}
 
 let leafletPromise: Promise<typeof Leaflet> | null = null;
 const EMPTY_HAZARDS: HazardAlert[] = [];
@@ -126,24 +140,24 @@ function markerHtml(point: NavigationPoint): { html: string; size: number } {
 
         return {
             size: 30,
-            html: `<div style="width:30px;height:30px;border-radius:9999px;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;font:700 13px system-ui;border:2.5px solid #fff;box-shadow:0 2px 6px rgba(6,40,61,.45)">${label}</div>`,
+            html: `<div style="width:26px;height:26px;border-radius:3px;background:${color};color:var(--background);display:flex;align-items:center;justify-content:center;font:700 12px 'JetBrains Mono',monospace;border:2px solid var(--background)">${label}</div>`,
         };
     }
 
     if (point.kind === 'point') {
         return {
             size: 14,
-            html: `<div style="width:14px;height:14px;border-radius:9999px;background:#fff;border:3px solid ${color};box-shadow:0 1px 4px rgba(6,40,61,.35)"></div>`,
+            html: `<div style="width:12px;height:12px;border-radius:9999px;background:var(--background);border:2px solid ${color}"></div>`,
         };
     }
 
     const badge = point.day
-        ? `<span style="position:absolute;top:-7px;right:-9px;background:#06283d;color:#fff;border-radius:8px;padding:0 4px;font:700 9px/14px system-ui;border:1.5px solid #fff">J${point.day}</span>`
+        ? `<span style="position:absolute;top:-8px;right:-12px;background:var(--background);color:var(--foreground);border-radius:2px;padding:0 3px;font:500 9px/13px 'JetBrains Mono',monospace;border:1px solid var(--line-strong)">J${point.day}</span>`
         : '';
 
     return {
-        size: 26,
-        html: `<div style="position:relative;width:26px;height:26px;border-radius:9999px;background:#fff;color:${color};display:flex;align-items:center;justify-content:center;border:2.5px solid ${color};box-shadow:0 2px 6px rgba(6,40,61,.35)">${anchorGlyph}${badge}</div>`,
+        size: 24,
+        html: `<div style="position:relative;width:24px;height:24px;border-radius:9999px;background:var(--background);color:${color};display:flex;align-items:center;justify-content:center;border:2px solid ${color}">${anchorGlyph}${badge}</div>`,
     };
 }
 
@@ -256,13 +270,13 @@ export default function PlannerMap({
                     const path = unwrapPath(sailingPath);
                     // Liseré clair sous la route pour la détacher du fond de carte.
                     L.polyline(path, {
-                        color: '#ffffff',
+                        color: themeColor('--background', '#0a1118'),
                         weight: 7,
                         opacity: 0.85,
                     }).addTo(map);
                     L.polyline(path, {
-                        color: '#1363df',
-                        weight: 3.5,
+                        color: themeColor('--chart-route', '#ffb020'),
+                        weight: 3,
                         ...(hasExactRoute ? {} : { dashArray: '10 8' }),
                     }).addTo(map);
 

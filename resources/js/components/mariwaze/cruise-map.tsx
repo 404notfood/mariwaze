@@ -62,7 +62,7 @@ function ignoreClick(): void {}
 const legendEntries = [
     {
         symbol: (
-            <span className="flex size-4 items-center justify-center rounded-full bg-[#15803d] text-[9px] font-bold text-white">
+            <span className="flex size-4 items-center justify-center rounded-[2px] bg-route font-mono text-[9px] font-bold text-background">
                 D
             </span>
         ),
@@ -70,7 +70,7 @@ const legendEntries = [
     },
     {
         symbol: (
-            <span className="flex size-4 items-center justify-center rounded-full bg-ocean-navy text-[9px] font-bold text-white">
+            <span className="flex size-4 items-center justify-center rounded-[2px] bg-route font-mono text-[9px] font-bold text-background">
                 A
             </span>
         ),
@@ -78,13 +78,13 @@ const legendEntries = [
     },
     {
         symbol: (
-            <span className="size-4 rounded-full border-2 border-sea-blue bg-white" />
+            <span className="size-3.5 rounded-full border-2 border-primary bg-background" />
         ),
         label: 'Port-étape',
     },
     {
         symbol: (
-            <span className="size-4 rounded-full border-2 border-[#0e9f6e] bg-white" />
+            <span className="size-3.5 rounded-full border-2 border-good bg-background" />
         ),
         label: 'Mouillage',
     },
@@ -149,11 +149,9 @@ export default function CruiseMap({
                 className="size-full"
             />
 
-            <div className="absolute top-4 left-16 z-[500] max-w-[calc(100%_-_5rem)] rounded-lg border border-border/70 bg-background/95 p-3 text-sm break-words shadow-sm backdrop-blur-sm">
-                <p className="text-xs font-semibold tracking-wide text-sea-blue uppercase">
-                    Itinéraire
-                </p>
-                <p className="mt-1 font-semibold">
+            <div className="absolute top-3 left-14 z-[500] max-w-[calc(100%_-_4.5rem)] rounded-sm border border-line-strong bg-background/90 px-3 py-2 text-sm break-words">
+                <p className="pw-label">Itinéraire</p>
+                <p className="mt-0.5 font-semibold tracking-[0.02em] uppercase">
                     {departure} → {destination}
                 </p>
                 {stops.length > 0 && (
@@ -171,7 +169,7 @@ export default function CruiseMap({
             </div>
 
             {onRouteHazards.length > 0 && (
-                <div className="absolute bottom-4 left-4 z-[500] rounded-lg border border-destructive/40 bg-background/95 px-3 py-2 text-xs font-medium shadow-sm backdrop-blur-sm">
+                <div className="absolute bottom-4 left-4 z-[500] rounded-sm border border-bad bg-background/90 px-3 py-1.5 font-mono text-[11px] tracking-[0.04em] text-bad uppercase">
                     ⚠ {onRouteHazards.length} zone
                     {onRouteHazards.length > 1 ? 's' : ''} de vigilance sur le
                     trajet
@@ -179,12 +177,12 @@ export default function CruiseMap({
             )}
 
             {!routeAvailable && (
-                <div className="absolute bottom-4 left-4 z-[500] rounded-lg border border-safety-orange/40 bg-background/95 px-3 py-2 text-xs shadow-sm">
+                <div className="absolute bottom-4 left-4 z-[500] rounded-sm border border-warn bg-background/90 px-3 py-1.5 font-mono text-[11px] tracking-[0.04em] text-warn uppercase">
                     Route non calculée : tracé indicatif.
                 </div>
             )}
 
-            <div className="absolute right-4 bottom-4 z-[500] hidden rounded-lg border border-border/70 bg-background/95 p-2.5 text-xs shadow-sm backdrop-blur-sm sm:block">
+            <div className="absolute right-4 bottom-4 z-[500] hidden rounded-sm border border-line-strong bg-background/90 p-2.5 font-mono text-[10px] tracking-[0.08em] uppercase sm:block">
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
                     {legendEntries.map((entry) => (
                         <span

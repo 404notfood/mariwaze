@@ -41,7 +41,7 @@ export function AppSidebar() {
         },
         { title: 'Carte marine', href: routes.map, icon: Compass },
         {
-            title: 'Explorer',
+            title: 'Ports & mouillages',
             href: routes.explore,
             icon: Anchor,
             matchPrefix: true,
@@ -70,7 +70,7 @@ export function AppSidebar() {
     ];
 
     return (
-        <Sidebar collapsible="icon" variant="inset">
+        <Sidebar collapsible="icon" variant="sidebar">
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>

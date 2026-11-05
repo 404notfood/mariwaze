@@ -12,8 +12,12 @@ export default defineConfig({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
             refresh: true,
             fonts: [
-                bunny('Manrope', {
+                bunny('Barlow Semi Condensed', {
                     weights: [400, 500, 600, 700],
+                    optimizedFallbacks: false,
+                }),
+                bunny('JetBrains Mono', {
+                    weights: [400, 500, 600],
                     optimizedFallbacks: false,
                 }),
             ],
