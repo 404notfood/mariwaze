@@ -8,11 +8,15 @@ import Route from 'lucide-react/icons/route';
 import Search from 'lucide-react/icons/search';
 import Ship from 'lucide-react/icons/ship';
 import { useState } from 'react';
+import {
+    Chip,
+    Instrument,
+    PageHeader,
+    Status,
+} from '@/components/mariwaze/passerelle';
 import PlaceSearch from '@/components/mariwaze/place-search';
 import type { Place } from '@/components/mariwaze/place-search';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { appRoutes } from '@/lib/mariwaze-routes';
@@ -57,6 +61,7 @@ type Props = {
     spots: Spot[];
     counts: { ports: number; anchorages: number };
 };
+const nf = new Intl.NumberFormat('fr-FR');
 const countryNames = new Intl.DisplayNames(['fr'], { type: 'region' });
 
 export default function Explore({
@@ -84,32 +89,33 @@ export default function Explore({
 
     return (
         <>
-            <Head title="Explorer" />
-            <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 p-4 md:p-6">
-                <header>
-                    <div className="mb-2 flex items-center gap-2 text-sea-blue">
-                        <Compass className="size-5" />
-                        <span className="text-sm font-medium">
-                            Préparer un itinéraire
-                        </span>
-                    </div>
-                    <h1 className="text-2xl font-bold md:text-3xl">
-                        Explorer les escales
-                    </h1>
-                    <p className="mt-2 text-muted-foreground">
-                        {counts.ports} ports et {counts.anchorages} mouillages
-                        dans le catalogue mondial.
-                        <span className="block text-xs">
-                            Sources : OpenStreetMap et NGA World Port Index.
-                        </span>
-                    </p>
-                </header>
+            <Head title="Ports et mouillages" />
+            <main className="flex w-full flex-1 flex-col">
+                <PageHeader
+                    label="Catalogue · OpenStreetMap et NGA World Port Index"
+                    title="Ports & mouillages"
+                />
+                <div className="grid grid-cols-2 border-b border-border">
+                    <Instrument
+                        label="Ports"
+                        value={nf.format(counts.ports)}
+                        className="border-r border-border"
+                    />
+                    <Instrument
+                        label="Mouillages"
+                        value={nf.format(counts.anchorages)}
+                    />
+                </div>
 
-                <section className="grid gap-5 border-y border-border/60 py-6 md:grid-cols-[1fr_auto_1fr] md:items-end">
+                <section className="grid gap-4 border-b border-border px-5 py-4 md:grid-cols-[1fr_auto_1fr_auto] md:items-end">
+                    <p className="pw-title flex items-center gap-2 md:col-span-4">
+                        <Compass className="size-4 text-primary" />
+                        Préparer un itinéraire
+                    </p>
                     <div>
                         <Label
                             htmlFor="explorer-departure"
-                            className="mb-2 block"
+                            className="pw-label mb-1.5 block"
                         >
                             Départ
                         </Label>
@@ -131,7 +137,7 @@ export default function Explore({
                     <div>
                         <Label
                             htmlFor="explorer-destination"
-                            className="mb-2 block"
+                            className="pw-label mb-1.5 block"
                         >
                             Arrivée
                         </Label>
@@ -149,28 +155,24 @@ export default function Explore({
                             }}
                         />
                     </div>
-                </section>
-
-                <div className="flex justify-end">
-                    {canContinue ? (
-                        <Button
-                            asChild
-                            className="bg-sea-blue hover:bg-sea-blue/90"
-                        >
-                            <Link
-                                href={`/croisieres/nouvelle?${new URLSearchParams({ departure: departure.trim(), destination: destination.trim(), ...(departurePlace?.reference ? { departure_place: departurePlace.reference } : {}), ...(destinationPlace?.reference ? { destination_place: destinationPlace.reference } : {}) }).toString()}`}
-                            >
+                    <div>
+                        {canContinue ? (
+                            <Button asChild>
+                                <Link
+                                    href={`/croisieres/nouvelle?${new URLSearchParams({ departure: departure.trim(), destination: destination.trim(), ...(departurePlace?.reference ? { departure_place: departurePlace.reference } : {}), ...(destinationPlace?.reference ? { destination_place: destinationPlace.reference } : {}) }).toString()}`}
+                                >
+                                    Créer la croisière
+                                    <ArrowRight className="size-4" />
+                                </Link>
+                            </Button>
+                        ) : (
+                            <Button disabled>
                                 Créer la croisière
                                 <ArrowRight className="size-4" />
-                            </Link>
-                        </Button>
-                    ) : (
-                        <Button disabled>
-                            Créer la croisière
-                            <ArrowRight className="size-4" />
-                        </Button>
-                    )}
-                </div>
+                            </Button>
+                        )}
+                    </div>
+                </section>
 
                 <ExploreCatalogue
                     key={JSON.stringify([filters, pagination.current_page])}
@@ -228,10 +230,7 @@ function ExploreCatalogue({
     const filterType = (type: string | null) => visit(type);
 
     return (
-        <section
-            id="escales"
-            className="scroll-mt-6 space-y-4 border-t border-border/60 pt-6"
-        >
+        <section id="escales" className="scroll-mt-6 space-y-4 px-5 py-4">
             <form
                 onSubmit={submitSearch}
                 className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
@@ -247,8 +246,8 @@ function ExploreCatalogue({
                         className="pl-9"
                     />
                 </div>
-                <label className="text-sm">
-                    Profondeur minimale (m)
+                <label className="flex flex-col gap-1.5">
+                    <span className="pw-label">Profondeur minimale (m)</span>
                     <Input
                         type="number"
                         min="0"
@@ -258,10 +257,10 @@ function ExploreCatalogue({
                         onChange={(event) => setDepth(event.target.value)}
                     />
                 </label>
-                <label className="text-sm">
-                    Service au port
+                <label className="flex flex-col gap-1.5">
+                    <span className="pw-label">Service au port</span>
                     <select
-                        className="mt-1 h-9 w-full rounded-md border bg-background px-2"
+                        className="h-9 w-full rounded-sm border border-input bg-background px-2 text-sm"
                         value={service}
                         onChange={(event) => {
                             setService(event.target.value);
@@ -280,10 +279,10 @@ function ExploreCatalogue({
                         <option value="has_provisions">Avitaillement</option>
                     </select>
                 </label>
-                <label className="text-sm">
-                    Mouillage protégé du
+                <label className="flex flex-col gap-1.5">
+                    <span className="pw-label">Mouillage protégé du</span>
                     <select
-                        className="mt-1 h-9 w-full rounded-md border bg-background px-2"
+                        className="h-9 w-full rounded-sm border border-input bg-background px-2 text-sm"
                         value={protection}
                         onChange={(event) => {
                             setProtection(event.target.value);
@@ -310,10 +309,10 @@ function ExploreCatalogue({
                         ))}
                     </select>
                 </label>
-                <label className="text-sm">
-                    Compatibilité bateau
+                <label className="flex flex-col gap-1.5">
+                    <span className="pw-label">Compatibilité bateau</span>
                     <select
-                        className="mt-1 h-9 w-full rounded-md border bg-background px-2"
+                        className="h-9 w-full rounded-sm border border-input bg-background px-2 text-sm"
                         value={boat}
                         onChange={(event) => setBoat(event.target.value)}
                     >
@@ -325,10 +324,10 @@ function ExploreCatalogue({
                         ))}
                     </select>
                 </label>
-                <label className="text-sm">
-                    Pays ou territoire
+                <label className="flex flex-col gap-1.5">
+                    <span className="pw-label">Pays ou territoire</span>
                     <select
-                        className="mt-1 h-9 w-full rounded-md border bg-background px-2"
+                        className="h-9 w-full rounded-sm border border-input bg-background px-2 text-sm"
                         value={country}
                         onChange={(event) => setCountry(event.target.value)}
                     >
@@ -356,11 +355,11 @@ function ExploreCatalogue({
                 href="/explorer"
                 preserveState
                 preserveScroll
-                className="text-sm text-sea-blue underline"
+                className="pw-label !text-primary hover:underline"
             >
                 Réinitialiser les filtres
             </Link>
-            <p role="status" className="text-sm text-muted-foreground">
+            <p role="status" className="pw-label">
                 {pagination.total === 0
                     ? 'Aucune escale trouvée'
                     : `${pagination.from}–${pagination.to} sur ${pagination.total} escale${pagination.total > 1 ? 's' : ''}`}
@@ -395,81 +394,77 @@ function ExploreCatalogue({
                     Aucune escale ne correspond à cette recherche.
                 </p>
             ) : (
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <ul className="divide-y divide-border border-y border-line-strong">
                     {spots.map((spot) => (
-                        <Link
-                            key={`${spot.type}-${spot.slug}`}
-                            href={
-                                spot.type === 'port'
-                                    ? appRoutes.port(spot.slug)
-                                    : appRoutes.anchorage(spot.slug)
-                            }
-                        >
-                            <Card className="h-full border-border/60 transition hover:border-sea-blue/60">
-                                <CardContent className="pt-5">
-                                    <div className="flex items-start justify-between gap-2">
-                                        <div className="flex items-start gap-2">
-                                            {spot.type === 'port' ? (
-                                                <Ship className="mt-0.5 size-4 shrink-0 text-sea-blue" />
-                                            ) : (
-                                                <Anchor className="mt-0.5 size-4 shrink-0 text-lagoon" />
-                                            )}
-                                            <div>
-                                                <p className="font-medium">
-                                                    {spot.name}
-                                                </p>
-                                                <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                                                    <MapPin className="size-3" />
-                                                    {spot.region ??
-                                                        `${spot.latitude.toFixed(3)}, ${spot.longitude.toFixed(3)}`}
-                                                    {spot.country_code
-                                                        ? ` · ${spot.country_code}`
-                                                        : ''}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        {spot.rating !== null && (
-                                            <span className="text-sm text-amber-500">
-                                                ★ {spot.rating}
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    <p className="mt-2 text-xs text-muted-foreground">
-                                        Profondeur :{' '}
-                                        {spot.depth === null
-                                            ? 'non renseignée'
-                                            : typeof spot.depth === 'number'
-                                              ? `${spot.depth} m`
-                                              : spot.depth}
-                                    </p>
-                                    {!!spot.protected_from?.length && (
-                                        <p className="mt-1 text-xs text-muted-foreground">
-                                            Protection :{' '}
-                                            {spot.protected_from.join(', ')}
+                        <li key={`${spot.type}-${spot.slug}`}>
+                            <Link
+                                href={
+                                    spot.type === 'port'
+                                        ? appRoutes.port(spot.slug)
+                                        : appRoutes.anchorage(spot.slug)
+                                }
+                                className="grid gap-2 px-1 py-3 transition hover:bg-raised md:grid-cols-[minmax(0,2fr)_minmax(0,1.6fr)_auto_auto] md:items-center md:gap-4"
+                            >
+                                <div className="flex min-w-0 items-start gap-2.5">
+                                    {spot.type === 'port' ? (
+                                        <Ship className="mt-1 size-4 shrink-0 text-primary" />
+                                    ) : (
+                                        <Anchor className="mt-1 size-4 shrink-0 text-good" />
+                                    )}
+                                    <div className="min-w-0">
+                                        <p className="truncate text-base font-semibold">
+                                            {spot.name}
                                         </p>
+                                        <p className="flex items-center gap-1 truncate text-sm text-muted-foreground">
+                                            <MapPin className="size-3 shrink-0" />
+                                            {spot.region ??
+                                                `${spot.latitude.toFixed(3)}, ${spot.longitude.toFixed(3)}`}
+                                            {spot.country_code
+                                                ? ` · ${spot.country_code}`
+                                                : ''}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-wrap gap-1">
+                                    {(spot.services ?? spot.tags ?? [])
+                                        .slice(0, 3)
+                                        .map((item) => (
+                                            <Chip key={item}>{item}</Chip>
+                                        ))}
+                                    {!!spot.protected_from?.length && (
+                                        <Chip>
+                                            Abri {spot.protected_from.join(' ')}
+                                        </Chip>
                                     )}
-                                    {(spot.services?.length ||
-                                        spot.tags?.length) && (
-                                        <div className="mt-3 flex flex-wrap gap-1">
-                                            {(spot.services ?? spot.tags ?? [])
-                                                .slice(0, 3)
-                                                .map((item) => (
-                                                    <Badge
-                                                        key={item}
-                                                        variant="secondary"
-                                                        className="text-xs"
-                                                    >
-                                                        {item}
-                                                    </Badge>
-                                                ))}
-                                        </div>
+                                </div>
+
+                                <div className="md:text-right">
+                                    <span className="pw-label md:hidden">
+                                        Profondeur{' '}
+                                    </span>
+                                    {spot.depth === null ? (
+                                        <Status tone="warn">
+                                            Fond à vérifier
+                                        </Status>
+                                    ) : (
+                                        <span className="pw-figure text-sm">
+                                            {typeof spot.depth === 'number'
+                                                ? `${nf.format(spot.depth)} m`
+                                                : spot.depth}
+                                        </span>
                                     )}
-                                </CardContent>
-                            </Card>
-                        </Link>
+                                </div>
+
+                                <span className="pw-figure w-12 text-sm text-muted-foreground md:text-right">
+                                    {spot.rating !== null
+                                        ? `★ ${spot.rating}`
+                                        : '—'}
+                                </span>
+                            </Link>
+                        </li>
                     ))}
-                </div>
+                </ul>
             )}
             {pagination.last_page > 1 && (
                 <nav
@@ -540,8 +535,8 @@ function FilterChip({
             aria-pressed={active}
             className={
                 active
-                    ? 'rounded-full bg-sea-blue px-4 py-1.5 text-sm font-medium text-white'
-                    : 'rounded-full border border-border/60 px-4 py-1.5 text-sm text-muted-foreground hover:border-sea-blue/60'
+                    ? 'rounded-sm border border-primary bg-accent px-3 py-1 font-mono text-[11px] tracking-[0.06em] text-primary uppercase'
+                    : 'rounded-sm border border-line-strong px-3 py-1 font-mono text-[11px] tracking-[0.06em] text-muted-foreground uppercase hover:text-foreground'
             }
         >
             {children}
@@ -550,5 +545,5 @@ function FilterChip({
 }
 
 Explore.layout = () => ({
-    breadcrumbs: [{ title: 'Explorer', href: appRoutes.explore }],
+    breadcrumbs: [{ title: 'Ports & mouillages', href: appRoutes.explore }],
 });

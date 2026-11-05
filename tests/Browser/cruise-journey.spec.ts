@@ -17,7 +17,7 @@ test('préparer une croisière, retenir une route et emporter le carnet hors con
     await page.goto('/croisieres');
     await expect(
         page.getByRole('heading', {
-            name: 'Votre prochaine aventure commence ici',
+            name: 'Choisissez un port de départ',
         }),
     ).toBeVisible();
     await page

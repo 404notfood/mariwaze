@@ -6,6 +6,7 @@ type Props = {
     className?: string;
     showTagline?: boolean;
     href?: string;
+    /** `light` : posé sur un fond sombre fixe (bandeau, pied de page). */
     variant?: 'light' | 'dark';
 };
 
@@ -15,23 +16,25 @@ export default function MariwazeLogo({
     href,
     variant = 'dark',
 }: Props) {
+    const onDark = variant === 'light';
+
     const content = (
         <>
             <div
                 className={cn(
-                    'flex size-10 items-center justify-center rounded-xl',
-                    variant === 'light'
-                        ? 'bg-white/15 text-white'
-                        : 'bg-ocean-navy text-lagoon',
+                    'flex size-9 items-center justify-center rounded-sm border-[1.5px]',
+                    onDark
+                        ? 'border-[#4cc9f0] text-[#4cc9f0]'
+                        : 'border-primary text-primary',
                 )}
             >
-                <MariwazeLogoIcon className="size-6" />
+                <MariwazeLogoIcon className="size-5" />
             </div>
             <div className="grid flex-1 text-left leading-tight">
                 <span
                     className={cn(
-                        'truncate text-base font-bold tracking-tight',
-                        variant === 'light' ? 'text-white' : 'text-ocean-navy',
+                        'truncate text-lg font-bold tracking-[0.08em] uppercase',
+                        onDark ? 'text-[#e6edf3]' : 'text-foreground',
                     )}
                 >
                     MariWaze
@@ -39,13 +42,11 @@ export default function MariwazeLogo({
                 {showTagline && (
                     <span
                         className={cn(
-                            'truncate text-xs',
-                            variant === 'light'
-                                ? 'text-white/70'
-                                : 'text-muted-foreground',
+                            'pw-label truncate',
+                            onDark && '!text-[#8fa1b3]',
                         )}
                     >
-                        Copilote maritime
+                        Copilote de croisière
                     </span>
                 )}
             </div>

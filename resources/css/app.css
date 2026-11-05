@@ -7,14 +7,24 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Design system « Passerelle » : l'écran d'un traceur de cartes.
+ * Mode nuit = la direction d'origine ; mode jour = la même grammaire sur fond clair.
+ * Valeurs en chiffres : JetBrains Mono (font-mono) ; interface : Barlow Semi Condensed.
+ */
 @theme {
     --font-sans:
-        'Manrope', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
-        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+        'Barlow Semi Condensed', 'Arial Narrow', ui-sans-serif, system-ui,
+        sans-serif;
+    --font-mono:
+        'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas,
+        monospace;
 
     --radius-lg: var(--radius);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 1px);
+    --radius-sm: calc(var(--radius) - 2px);
+    --radius-xl: calc(var(--radius) + 2px);
+    --radius-2xl: calc(var(--radius) + 4px);
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -59,143 +69,185 @@
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
 
-    --color-ocean-navy: #06283d;
-    --color-sea-blue: #1363df;
-    --color-lagoon: #47b5ff;
-    --color-sand: #e8d5b7;
-    --color-foam: #f7f7f7;
-    --color-safety-orange: #ff8c42;
+    /* Passerelle : surfaces et signaux */
+    --color-raised: var(--raised);
+    --color-sunken: var(--sunken);
+    --color-line-strong: var(--line-strong);
+    --color-route: var(--route);
+    --color-good: var(--good);
+    --color-good-soft: var(--good-soft);
+    --color-warn: var(--warn);
+    --color-warn-soft: var(--warn-soft);
+    --color-bad: var(--bad);
+    --color-bad-soft: var(--bad-soft);
+
+    /* Anciennes couleurs de marque, ré-alignées sur Passerelle
+       (les pages existantes continuent de fonctionner). */
+    --color-ocean-navy: var(--deep);
+    --color-sea-blue: var(--primary);
+    --color-lagoon: var(--lagoon);
+    --color-sand: var(--warn-soft);
+    --color-foam: var(--background);
+    --color-safety-orange: var(--warn);
 }
 
+/* Passerelle — jour */
 :root {
-    --background: #f7f7f7;
-    --foreground: #06283d;
+    --background: #eef2f5;
+    --foreground: #0a1118;
     --card: #ffffff;
-    --card-foreground: #06283d;
+    --card-foreground: #0a1118;
     --popover: #ffffff;
-    --popover-foreground: #06283d;
-    --primary: #1363df;
+    --popover-foreground: #0a1118;
+    --primary: #0a7aa3;
     --primary-foreground: #ffffff;
-    --secondary: #e8d5b7;
-    --secondary-foreground: #06283d;
-    --muted: #eef4f8;
-    --muted-foreground: #4a6678;
-    --accent: #47b5ff;
-    --accent-foreground: #06283d;
-    --destructive: #ff8c42;
+    --secondary: #e1e8ee;
+    --secondary-foreground: #0a1118;
+    --muted: #e6ecf1;
+    --muted-foreground: #4a5a6a;
+    --accent: #dcedf4;
+    --accent-foreground: #0a1118;
+    --destructive: #c0392b;
     --destructive-foreground: #ffffff;
-    --border: #d4e4ef;
-    --input: #d4e4ef;
-    --ring: #47b5ff;
-    --chart-1: #1363df;
-    --chart-2: #47b5ff;
-    --chart-3: #e8d5b7;
-    --chart-4: #06283d;
-    --chart-5: #ff8c42;
-    --radius: 0.75rem;
-    --sidebar: #06283d;
-    --sidebar-foreground: #f7f7f7;
-    --sidebar-primary: #47b5ff;
-    --sidebar-primary-foreground: #06283d;
-    --sidebar-accent: #0a3550;
-    --sidebar-accent-foreground: #f7f7f7;
-    --sidebar-border: #0a3550;
-    --sidebar-ring: #47b5ff;
+    --border: #cfd8e0;
+    --input: #9fb0bf;
+    --ring: #0a7aa3;
+    --chart-1: #0a7aa3;
+    --chart-2: #c27a00;
+    --chart-3: #1b7a43;
+    --chart-4: #0a1118;
+    --chart-5: #c0392b;
+    --radius: 0.25rem;
+    --sidebar: #0a1118;
+    --sidebar-foreground: #e6edf3;
+    --sidebar-primary: #4cc9f0;
+    --sidebar-primary-foreground: #04141c;
+    --sidebar-accent: #0f2a36;
+    --sidebar-accent-foreground: #e6edf3;
+    --sidebar-border: #1f2d3a;
+    --sidebar-ring: #4cc9f0;
 
-    /* Carte marine — mode jour */
-    --chart-water-1: #b8dce8;
-    --chart-water-2: #8ecae6;
-    --chart-water-3: #6bb5d4;
-    --chart-land-1: #d4c4a0;
-    --chart-land-2: #b8a882;
-    --chart-coastline: #8b7355;
-    --chart-grid: rgba(6, 40, 61, 0.06);
-    --chart-depth: rgba(6, 40, 61, 0.2);
-    --chart-depth-label: rgba(6, 40, 61, 0.5);
-    --chart-current: #087e8b;
-    --chart-current-strong: #075a68;
-    --chart-current-label: rgba(6, 40, 61, 0.72);
-    --chart-route: #1363df;
-    --chart-route-glow: #47b5ff;
-    --chart-marker-port: #1363df;
+    --raised: #ffffff;
+    --sunken: #e1e8ee;
+    --line-strong: #8fa1b3;
+    --deep: #1a2836;
+    --lagoon: #0a7aa3;
+    --route: #c27a00;
+    --good: #1b7a43;
+    --good-soft: #dcf0e3;
+    --warn: #a86300;
+    --warn-soft: #fbecd0;
+    --bad: #c0392b;
+    --bad-soft: #f8dcd8;
+
+    /* Carte marine — jour */
+    --chart-water-1: #d6e6ee;
+    --chart-water-2: #c2d9e6;
+    --chart-water-3: #a9c9da;
+    --chart-land-1: #e7e3d9;
+    --chart-land-2: #d9d3c4;
+    --chart-coastline: #5d6b78;
+    --chart-grid: rgba(10, 17, 24, 0.06);
+    --chart-depth: rgba(10, 122, 163, 0.25);
+    --chart-depth-label: rgba(10, 17, 24, 0.55);
+    --chart-current: #0a7aa3;
+    --chart-current-strong: #075a7a;
+    --chart-current-label: rgba(10, 17, 24, 0.72);
+    --chart-route: #c27a00;
+    --chart-route-glow: #ffb020;
+    --chart-marker-port: #0a7aa3;
     --chart-marker-port-stroke: #ffffff;
-    --chart-marker-anchorage: #e8d5b7;
-    --chart-marker-anchorage-stroke: #06283d;
-    --chart-marker-waypoint: #47b5ff;
-    --chart-marker-waypoint-stroke: #06283d;
-    --chart-marker-danger: #ff8c42;
+    --chart-marker-anchorage: #1b7a43;
+    --chart-marker-anchorage-stroke: #ffffff;
+    --chart-marker-waypoint: #c27a00;
+    --chart-marker-waypoint-stroke: #0a1118;
+    --chart-marker-danger: #c0392b;
     --chart-marker-danger-stroke: #ffffff;
-    --chart-danger-zone: #ff8c42;
-    --chart-label: #06283d;
-    --chart-compass-bg: #f7f7f7;
-    --chart-compass-north: #1363df;
-    --chart-highlight: #47b5ff;
-    --chart-legend-bg: rgba(255, 255, 255, 0.9);
+    --chart-danger-zone: #c0392b;
+    --chart-label: #0a1118;
+    --chart-compass-bg: #ffffff;
+    --chart-compass-north: #c27a00;
+    --chart-highlight: #0a7aa3;
+    --chart-legend-bg: rgba(255, 255, 255, 0.92);
 }
 
+/* Passerelle — nuit (la direction d'origine) */
 .dark {
-    --background: #020f18;
-    --foreground: #e8f4fc;
-    --card: #06283d;
-    --card-foreground: #e8f4fc;
-    --popover: #06283d;
-    --popover-foreground: #e8f4fc;
-    --primary: #47b5ff;
-    --primary-foreground: #020f18;
-    --secondary: #0a3550;
-    --secondary-foreground: #e8f4fc;
-    --muted: #0a3550;
-    --muted-foreground: #7eb8d4;
-    --accent: #1363df;
-    --accent-foreground: #e8f4fc;
-    --destructive: #ff8c42;
-    --destructive-foreground: #020f18;
-    --border: #0d4a6e;
-    --input: #0d4a6e;
-    --ring: #47b5ff;
-    --chart-1: #47b5ff;
-    --chart-2: #1363df;
-    --chart-3: #c4a882;
-    --chart-4: #ff8c42;
-    --chart-5: #7eb8d4;
-    --sidebar: #010a10;
-    --sidebar-foreground: #e8f4fc;
-    --sidebar-primary: #47b5ff;
-    --sidebar-primary-foreground: #020f18;
-    --sidebar-accent: #06283d;
-    --sidebar-accent-foreground: #e8f4fc;
-    --sidebar-border: #06283d;
-    --sidebar-ring: #47b5ff;
+    --background: #0a1118;
+    --foreground: #e6edf3;
+    --card: #111b25;
+    --card-foreground: #e6edf3;
+    --popover: #111b25;
+    --popover-foreground: #e6edf3;
+    --primary: #4cc9f0;
+    --primary-foreground: #04141c;
+    --secondary: #1a2836;
+    --secondary-foreground: #e6edf3;
+    --muted: #0f1923;
+    --muted-foreground: #8fa1b3;
+    --accent: #0f2a36;
+    --accent-foreground: #e6edf3;
+    --destructive: #ff7a6b;
+    --destructive-foreground: #1a0705;
+    --border: #1f2d3a;
+    --input: #3b5166;
+    --ring: #4cc9f0;
+    --chart-1: #4cc9f0;
+    --chart-2: #ffb020;
+    --chart-3: #5ee08f;
+    --chart-4: #e6edf3;
+    --chart-5: #ff7a6b;
+    --sidebar: #070d13;
+    --sidebar-foreground: #e6edf3;
+    --sidebar-primary: #4cc9f0;
+    --sidebar-primary-foreground: #04141c;
+    --sidebar-accent: #0f2a36;
+    --sidebar-accent-foreground: #e6edf3;
+    --sidebar-border: #1f2d3a;
+    --sidebar-ring: #4cc9f0;
 
-    /* Carte marine — mode nuit */
-    --chart-water-1: #041824;
-    --chart-water-2: #06283d;
-    --chart-water-3: #0a3550;
-    --chart-land-1: #3d5a45;
-    --chart-land-2: #2a4030;
-    --chart-coastline: #c4a882;
-    --chart-grid: rgba(71, 181, 255, 0.08);
-    --chart-depth: rgba(71, 181, 255, 0.25);
-    --chart-depth-label: rgba(126, 184, 212, 0.7);
-    --chart-current: #65dce8;
-    --chart-current-strong: #9af0ef;
-    --chart-current-label: rgba(211, 249, 255, 0.85);
-    --chart-route: #47b5ff;
-    --chart-route-glow: #1363df;
-    --chart-marker-port: #47b5ff;
-    --chart-marker-port-stroke: #e8f4fc;
-    --chart-marker-anchorage: #c4a882;
-    --chart-marker-anchorage-stroke: #e8f4fc;
-    --chart-marker-waypoint: #7eb8d4;
-    --chart-marker-waypoint-stroke: #e8f4fc;
-    --chart-marker-danger: #ff8c42;
-    --chart-marker-danger-stroke: #ff8c42;
-    --chart-danger-zone: #ff8c42;
-    --chart-label: #e8f4fc;
-    --chart-compass-bg: #06283d;
-    --chart-compass-north: #47b5ff;
-    --chart-highlight: #47b5ff;
-    --chart-legend-bg: rgba(6, 40, 61, 0.85);
+    --raised: #111b25;
+    --sunken: #060b10;
+    --line-strong: #3b5166;
+    --deep: #1a2836;
+    --lagoon: #4cc9f0;
+    --route: #ffb020;
+    --good: #5ee08f;
+    --good-soft: #12301f;
+    --warn: #ffb020;
+    --warn-soft: #3a2a08;
+    --bad: #ff7a6b;
+    --bad-soft: #3a1414;
+
+    /* Carte marine — nuit */
+    --chart-water-1: #0c1822;
+    --chart-water-2: #0f2130;
+    --chart-water-3: #12283a;
+    --chart-land-1: #18242f;
+    --chart-land-2: #141f29;
+    --chart-coastline: #3b5166;
+    --chart-grid: rgba(76, 201, 240, 0.06);
+    --chart-depth: rgba(76, 201, 240, 0.22);
+    --chart-depth-label: rgba(143, 161, 179, 0.8);
+    --chart-current: #4cc9f0;
+    --chart-current-strong: #9be3f7;
+    --chart-current-label: rgba(230, 237, 243, 0.85);
+    --chart-route: #ffb020;
+    --chart-route-glow: #a86e00;
+    --chart-marker-port: #4cc9f0;
+    --chart-marker-port-stroke: #0a1118;
+    --chart-marker-anchorage: #5ee08f;
+    --chart-marker-anchorage-stroke: #0a1118;
+    --chart-marker-waypoint: #ffb020;
+    --chart-marker-waypoint-stroke: #0a1118;
+    --chart-marker-danger: #ff7a6b;
+    --chart-marker-danger-stroke: #0a1118;
+    --chart-danger-zone: #ff7a6b;
+    --chart-label: #e6edf3;
+    --chart-compass-bg: #111b25;
+    --chart-compass-north: #ffb020;
+    --chart-highlight: #4cc9f0;
+    --chart-legend-bg: rgba(10, 17, 24, 0.9);
 }
 
 @layer base {
@@ -205,53 +257,93 @@
 
     body {
         @apply bg-background text-foreground;
+        font-size: 15px;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 2px;
+    }
+}
+
+@layer components {
+    /* Libellé d'instrument : petites capitales à chasse fixe */
+    .pw-label {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        line-height: 14px;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted-foreground);
+    }
+
+    /* Titre de panneau */
+    .pw-title {
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    /* Valeur d'instrument */
+    .pw-figure {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+        font-weight: 500;
+    }
+
+    /* Panneau : surface relevée, filet, pas d'ombre */
+    .pw-panel {
+        background: var(--raised);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+    }
+
+    /* Avis écrit, toujours avec le mot */
+    .pw-status {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        white-space: nowrap;
     }
 }
 
 @layer utilities {
+    /* Ex-dégradé : aplat sombre quadrillé comme un écran de traceur */
     .mariwaze-gradient-ocean {
-        background: linear-gradient(
-            135deg,
-            #06283d 0%,
-            #1363df 50%,
-            #47b5ff 100%
-        );
+        background-color: #0a1118;
+        background-image:
+            linear-gradient(rgba(76, 201, 240, 0.06) 1px, transparent 1px),
+            linear-gradient(
+                90deg,
+                rgba(76, 201, 240, 0.06) 1px,
+                transparent 1px
+            );
+        background-size: 48px 48px;
     }
 
     .mariwaze-gradient-sand {
-        background: linear-gradient(180deg, #f7f7f7 0%, #e8d5b7 100%);
+        background: var(--background);
     }
 
     .mariwaze-pattern-map {
-        background-image:
-            radial-gradient(
-                circle at 20% 30%,
-                rgba(71, 181, 255, 0.15) 0%,
-                transparent 50%
-            ),
-            radial-gradient(
-                circle at 80% 70%,
-                rgba(19, 99, 223, 0.1) 0%,
-                transparent 40%
-            );
-    }
-
-    .dark .mariwaze-gradient-ocean {
-        background: linear-gradient(
-            135deg,
-            #010a10 0%,
-            #06283d 40%,
-            #0a3550 100%
-        );
+        background: none;
     }
 
     .nautical-chart {
-        box-shadow: inset 0 0 60px rgba(6, 40, 61, 0.15);
+        box-shadow: none;
     }
 
-    .dark .nautical-chart {
-        box-shadow:
-            inset 0 0 80px rgba(0, 0, 0, 0.4),
-            0 0 30px rgba(71, 181, 255, 0.05);
+    /* Fond de carte OpenStreetMap passé en mode nuit */
+    .dark .leaflet-tile-pane {
+        filter: invert(1) hue-rotate(185deg) brightness(0.82) contrast(0.9)
+            saturate(0.35);
+    }
+
+    .leaflet-container {
+        font-family: var(--font-sans);
     }
 }

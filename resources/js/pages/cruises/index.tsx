@@ -1,12 +1,15 @@
 import { Head, Link, router } from '@inertiajs/react';
 import ArrowRight from 'lucide-react/icons/arrow-right';
-import Calendar from 'lucide-react/icons/calendar';
-import MapPin from 'lucide-react/icons/map-pin';
-import Ship from 'lucide-react/icons/ship';
+import Plus from 'lucide-react/icons/plus';
+import Route from 'lucide-react/icons/route';
 import Trash2 from 'lucide-react/icons/trash-2';
-import { Badge } from '@/components/ui/badge';
+import {
+    Chip,
+    Instrument,
+    PageHeader,
+    SegmentBar,
+} from '@/components/mariwaze/passerelle';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Dialog,
     DialogClose,
@@ -19,6 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { useMariwazeRoutes } from '@/hooks/use-mariwaze-routes';
 import { appRoutes } from '@/lib/mariwaze-routes';
+import { cn } from '@/lib/utils';
 
 type Cruise = {
     slug: string;
@@ -39,228 +43,259 @@ type Props = {
     cruises: Cruise[];
 };
 
+const nf = new Intl.NumberFormat('fr-FR');
+
 export default function CruisesIndex({ cruises }: Props) {
     const routes = useMariwazeRoutes();
+    const totalMiles = cruises.reduce(
+        (sum, cruise) =>
+            sum + (cruise.route_available === false ? 0 : cruise.miles),
+        0,
+    );
+    const toFinish = cruises.filter((cruise) => cruise.progress < 100).length;
 
     return (
         <>
             <Head title="Mes croisières" />
-            <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-                <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold text-foreground md:text-3xl">
-                            Mes croisières
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            Vos projets de navigation en préparation ou en cours
-                        </p>
+            <div className="flex flex-1 flex-col">
+                <PageHeader
+                    label="Projets"
+                    title="Mes croisières"
+                    actions={
+                        <Button asChild>
+                            <Link href="/croisieres/nouvelle">
+                                <Plus className="size-4" />
+                                Croisière
+                            </Link>
+                        </Button>
+                    }
+                />
+
+                {cruises.length > 0 && (
+                    <div className="grid grid-cols-3 border-b border-border">
+                        <Instrument
+                            label="Croisières"
+                            value={cruises.length}
+                            className="border-r border-border"
+                        />
+                        <Instrument
+                            label="À préparer"
+                            value={toFinish}
+                            className="border-r border-border"
+                        />
+                        <Instrument
+                            label="Milles prévus"
+                            value={nf.format(totalMiles)}
+                            unit="M"
+                        />
                     </div>
-                    <Button
-                        asChild
-                        className="bg-sea-blue hover:bg-sea-blue/90"
-                    >
-                        <Link href="/croisieres/nouvelle">
-                            Nouvelle croisière
-                            <ArrowRight className="size-4" />
-                        </Link>
-                    </Button>
-                </div>
+                )}
 
                 {cruises.length === 0 && (
-                    <Card className="border-dashed border-sea-blue/30 bg-sea-blue/5">
-                        <CardContent className="flex flex-col items-center gap-4 px-6 py-12 text-center">
-                            <div className="rounded-full bg-sea-blue/10 p-4">
-                                <Ship
-                                    className="size-8 text-sea-blue"
-                                    aria-hidden="true"
-                                />
-                            </div>
-                            <div className="max-w-md space-y-2">
-                                <h2 className="text-xl font-semibold">
-                                    Votre prochaine aventure commence ici
-                                </h2>
-                                <p className="text-sm text-muted-foreground">
-                                    Choisissez un départ et une destination pour
-                                    préparer votre première croisière, comparer
-                                    les itinéraires et suivre votre checklist.
-                                </p>
-                            </div>
-                            <Button
-                                asChild
-                                className="bg-sea-blue hover:bg-sea-blue/90"
-                            >
+                    <section className="flex flex-col items-start gap-4 px-5 py-16">
+                        <Route className="size-8 text-primary" />
+                        <div className="max-w-lg">
+                            <p className="pw-label">Aucune croisière</p>
+                            <h2 className="mt-1 text-2xl font-semibold tracking-[0.02em] uppercase">
+                                Choisissez un port de départ
+                            </h2>
+                            <p className="mt-2 text-muted-foreground">
+                                Un départ, une destination : MariWaze compare
+                                les itinéraires et prépare votre liste avant
+                                d’appareiller.
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <Button asChild>
                                 <Link href="/croisieres/nouvelle">
                                     Préparer ma première croisière
                                     <ArrowRight className="size-4" />
                                 </Link>
                             </Button>
-                            <Link
-                                href={appRoutes.explore}
-                                className="text-sm text-sea-blue underline underline-offset-4"
-                            >
-                                Découvrir les ports et mouillages
-                            </Link>
-                        </CardContent>
-                    </Card>
+                            <Button asChild variant="outline">
+                                <Link href={appRoutes.explore}>
+                                    Ports et mouillages
+                                </Link>
+                            </Button>
+                        </div>
+                    </section>
                 )}
-                <div className="grid gap-4">
-                    {cruises.map((cruise) => (
-                        <Card
-                            key={cruise.slug}
-                            className="overflow-hidden border-border/60"
+
+                {cruises.length > 0 && (
+                    <div role="table" aria-label="Croisières">
+                        <div
+                            role="row"
+                            className="hidden grid-cols-[minmax(0,2.2fr)_1fr_1fr_0.8fr_1.4fr_auto] gap-4 border-b border-line-strong bg-sunken px-5 py-2 lg:grid"
                         >
-                            <div className="h-1 bg-gradient-to-r from-ocean-navy via-sea-blue to-lagoon" />
-                            <CardHeader className="flex flex-row items-start justify-between gap-4">
-                                <div>
-                                    <Badge
-                                        variant="secondary"
-                                        className="mb-2 bg-sand/50 dark:bg-sand/20"
-                                    >
-                                        {cruise.status}
-                                    </Badge>
-                                    <CardTitle className="text-xl">
+                            <span role="columnheader" className="pw-label">
+                                Croisière
+                            </span>
+                            <span role="columnheader" className="pw-label">
+                                Départ
+                            </span>
+                            <span
+                                role="columnheader"
+                                className="pw-label text-right"
+                            >
+                                Distance
+                            </span>
+                            <span
+                                role="columnheader"
+                                className="pw-label text-right"
+                            >
+                                Durée
+                            </span>
+                            <span role="columnheader" className="pw-label">
+                                Préparation
+                            </span>
+                            <span role="columnheader" className="sr-only">
+                                Actions
+                            </span>
+                        </div>
+
+                        {cruises.map((cruise, index) => (
+                            <div
+                                key={cruise.slug}
+                                role="row"
+                                className={cn(
+                                    'grid gap-3 border-b border-border px-5 py-4 lg:grid-cols-[minmax(0,2.2fr)_1fr_1fr_0.8fr_1.4fr_auto] lg:items-center lg:gap-4',
+                                    index === 0 &&
+                                        'bg-raised shadow-[inset_2px_0_0_var(--primary)]',
+                                )}
+                            >
+                                <div role="cell" className="min-w-0">
+                                    <div className="flex flex-wrap gap-1">
+                                        <Chip accent>{cruise.status}</Chip>
+                                        <Chip>{cruise.style}</Chip>
+                                    </div>
+                                    <p className="mt-1.5 truncate text-lg leading-6 font-semibold">
                                         {cruise.title}
-                                    </CardTitle>
-                                    <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-                                        <MapPin className="size-3.5" />
+                                    </p>
+                                    <p className="truncate text-sm text-muted-foreground">
                                         {cruise.route}
                                     </p>
                                 </div>
-                                <Ship className="size-8 text-sea-blue/60" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="mb-4 grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
-                                    <Meta
-                                        icon={Calendar}
-                                        label="Départ"
-                                        value={cruise.departure_date}
-                                    />
-                                    <Meta
-                                        label="Durée"
-                                        value={cruise.duration}
-                                    />
-                                    <Meta
-                                        label="Milles"
-                                        value={
-                                            cruise.route_available === false
-                                                ? 'À vérifier'
-                                                : `${cruise.miles} M`
-                                        }
-                                    />
-                                    <Meta label="Style" value={cruise.style} />
+
+                                <div role="cell">
+                                    <span className="pw-label lg:hidden">
+                                        Départ{' '}
+                                    </span>
+                                    <span className="pw-figure text-sm">
+                                        {cruise.departure_date}
+                                    </span>
                                 </div>
-                                <div className="mb-4">
-                                    <div className="mb-1 flex justify-between text-sm">
-                                        <span className="text-muted-foreground">
-                                            Préparation
+
+                                <div role="cell" className="lg:text-right">
+                                    <span className="pw-label lg:hidden">
+                                        Distance{' '}
+                                    </span>
+                                    {cruise.route_available === false ? (
+                                        <span className="pw-status text-warn">
+                                            À vérifier
                                         </span>
-                                        <span className="font-semibold text-sea-blue">
-                                            {cruise.progress}%
+                                    ) : (
+                                        <span className="pw-figure text-sm">
+                                            {nf.format(cruise.miles)} M
+                                            <span className="block text-xs text-muted-foreground">
+                                                {cruise.stops} escale
+                                                {cruise.stops > 1 ? 's' : ''}
+                                            </span>
                                         </span>
-                                    </div>
-                                    <div className="h-2 overflow-hidden rounded-full bg-muted">
-                                        <div
-                                            className="h-full rounded-full bg-gradient-to-r from-sea-blue to-lagoon"
-                                            style={{
-                                                width: `${cruise.progress}%`,
-                                            }}
-                                        />
-                                    </div>
+                                    )}
                                 </div>
-                                <div className="flex flex-col gap-2 sm:flex-row">
+
+                                <div role="cell" className="lg:text-right">
+                                    <span className="pw-label lg:hidden">
+                                        Durée{' '}
+                                    </span>
+                                    <span className="pw-figure text-sm">
+                                        {cruise.duration}
+                                    </span>
+                                </div>
+
+                                <div role="cell">
+                                    <span className="pw-figure text-lg">
+                                        {cruise.progress}%
+                                    </span>
+                                    <SegmentBar
+                                        value={cruise.progress}
+                                        className="mt-1 h-2.5 max-w-[180px]"
+                                    />
+                                </div>
+
+                                <div
+                                    role="cell"
+                                    className="flex items-center gap-2 lg:justify-end"
+                                >
                                     <Button
                                         asChild
-                                        variant="outline"
-                                        className="w-full sm:w-auto"
+                                        variant={
+                                            index === 0 ? 'default' : 'outline'
+                                        }
+                                        size="sm"
                                     >
                                         <Link href={routes.cruise(cruise.slug)}>
-                                            Voir la croisière
+                                            Ouvrir
                                             <ArrowRight className="size-4" />
                                         </Link>
                                     </Button>
                                     {cruise.deletable && (
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                                <Button
-                                                    variant="outline"
-                                                    className="w-full border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive sm:w-auto"
-                                                >
-                                                    <Trash2 className="size-4" />
-                                                    Supprimer
-                                                </Button>
-                                            </DialogTrigger>
-                                            <DialogContent>
-                                                <DialogHeader>
-                                                    <DialogTitle>
-                                                        Supprimer cette
-                                                        croisière ?
-                                                    </DialogTitle>
-                                                    <DialogDescription>
-                                                        « {cruise.title} » sera
-                                                        supprimée
-                                                        définitivement, avec son
-                                                        itinéraire préparé.
-                                                    </DialogDescription>
-                                                </DialogHeader>
-                                                <DialogFooter>
-                                                    <DialogClose asChild>
-                                                        <Button variant="outline">
-                                                            Annuler
-                                                        </Button>
-                                                    </DialogClose>
-                                                    <Button
-                                                        variant="destructive"
-                                                        onClick={() =>
-                                                            router.delete(
-                                                                `/croisieres/${cruise.slug}`,
-                                                                {
-                                                                    preserveScroll: true,
-                                                                    onSuccess:
-                                                                        () =>
-                                                                            router.visit(
-                                                                                '/croisieres',
-                                                                                {
-                                                                                    replace: true,
-                                                                                },
-                                                                            ),
-                                                                },
-                                                            )
-                                                        }
-                                                    >
-                                                        <Trash2 className="size-4" />
-                                                        Supprimer
-                                                    </Button>
-                                                </DialogFooter>
-                                            </DialogContent>
-                                        </Dialog>
+                                        <DeleteCruise cruise={cruise} />
                                     )}
                                 </div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </>
     );
 }
 
-function Meta({
-    icon: Icon,
-    label,
-    value,
-}: {
-    icon?: typeof Calendar;
-    label: string;
-    value: string;
-}) {
+function DeleteCruise({ cruise }: { cruise: Cruise }) {
     return (
-        <div>
-            <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                {Icon && <Icon className="size-3" />}
-                {label}
-            </p>
-            <p className="font-semibold">{value}</p>
-        </div>
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 text-muted-foreground hover:text-destructive"
+                    title="Supprimer la croisière"
+                    aria-label={`Supprimer ${cruise.title}`}
+                >
+                    <Trash2 className="size-4" />
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Supprimer cette croisière ?</DialogTitle>
+                    <DialogDescription>
+                        « {cruise.title} » sera supprimée définitivement, avec
+                        son itinéraire préparé.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline">Annuler</Button>
+                    </DialogClose>
+                    <Button
+                        variant="destructive"
+                        onClick={() =>
+                            router.delete(`/croisieres/${cruise.slug}`, {
+                                preserveScroll: true,
+                                onSuccess: () =>
+                                    router.visit('/croisieres', {
+                                        replace: true,
+                                    }),
+                            })
+                        }
+                    >
+                        <Trash2 className="size-4" />
+                        Supprimer
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
 

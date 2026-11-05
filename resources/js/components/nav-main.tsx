@@ -14,12 +14,15 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
 
     return (
         <SidebarGroup className="px-2 py-0">
-            <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+            <SidebarGroupLabel className="pw-label !text-sidebar-foreground/50">
+                Navigation
+            </SidebarGroupLabel>
             <SidebarMenu>
                 {items.map((item) => (
                     <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
                             asChild
+                            className="h-9 rounded-sm text-[15px] font-medium text-sidebar-foreground/75 hover:text-sidebar-foreground data-[active=true]:font-semibold data-[active=true]:text-sidebar-primary data-[active=true]:shadow-[inset_2px_0_0_var(--sidebar-primary)]"
                             isActive={
                                 item.isActive ??
                                 (item.matchPrefix

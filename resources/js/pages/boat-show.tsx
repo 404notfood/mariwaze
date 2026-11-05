@@ -1,14 +1,15 @@
 import { Head, Link, router } from '@inertiajs/react';
-import Anchor from 'lucide-react/icons/anchor';
-import CheckCircle2 from 'lucide-react/icons/check-circle-2';
-import Circle from 'lucide-react/icons/circle';
-import Gauge from 'lucide-react/icons/gauge';
+import AlertTriangle from 'lucide-react/icons/alert-triangle';
+import Check from 'lucide-react/icons/check';
 import Pencil from 'lucide-react/icons/pencil';
-import Ruler from 'lucide-react/icons/ruler';
-import Ship from 'lucide-react/icons/ship';
 import { useState } from 'react';
+import {
+    Chip,
+    PageHeader,
+    SegmentBar,
+    Status,
+} from '@/components/mariwaze/passerelle';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useMariwazeRoutes } from '@/hooks/use-mariwaze-routes';
 import { appRoutes } from '@/lib/mariwaze-routes';
 import { cn } from '@/lib/utils';
@@ -34,11 +35,14 @@ type Props = {
     boat: Boat;
 };
 
+const nf = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
+
 export default function DemoBoatShow({ boat }: Props) {
     const routes = useMariwazeRoutes();
     const [pending, setPending] = useState<string | null>(null);
 
     const equipmentPresent = boat.equipment.filter((e) => e.present).length;
+    const hasMmsi = Boolean(boat.mmsi && boat.mmsi.trim() !== '');
 
     const toggleEquipment = (key: string, present: boolean) => {
         setPending(key);
@@ -52,234 +56,282 @@ export default function DemoBoatShow({ boat }: Props) {
     return (
         <>
             <Head title={`Bateau — ${boat.name}`} />
-            <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div className="flex items-start gap-4">
-                        <div className="flex size-16 items-center justify-center rounded-2xl bg-ocean-navy text-3xl text-white dark:bg-sidebar-accent">
-                            ⛵
-                        </div>
-                        <div>
-                            <p className="text-sm text-muted-foreground">
-                                Mon bateau
-                            </p>
-                            <h1 className="text-2xl font-bold md:text-3xl">
-                                {boat.name}
-                            </h1>
-                            <p className="text-muted-foreground">
-                                {boat.type_label} · Pavillon {boat.flag}
-                            </p>
-                        </div>
-                    </div>
-                    <Button
-                        asChild
-                        className="bg-sea-blue hover:bg-sea-blue/90"
-                    >
-                        <Link href={routes.boatSetup}>
-                            <Pencil className="size-4" />
-                            Modifier le profil
-                        </Link>
-                    </Button>
-                </div>
+            <div className="flex flex-1 flex-col">
+                <PageHeader
+                    label={`Bateau · ${boat.type_label} · ${boat.flag}`}
+                    title={boat.name}
+                    actions={
+                        <Button asChild variant="outline">
+                            <Link href={routes.boatSetup}>
+                                <Pencil className="size-4" />
+                                Modifier la fiche
+                            </Link>
+                        </Button>
+                    }
+                />
 
-                <Card className="overflow-hidden border-border/60">
-                    <div className="h-1 bg-gradient-to-r from-ocean-navy to-lagoon" />
-                    <CardContent className="flex flex-col gap-4 pt-6 md:flex-row md:items-center md:justify-between">
-                        <div>
-                            <p className="text-sm text-muted-foreground">
-                                Audit sécurité
-                            </p>
-                            <p className="text-xl font-bold">
-                                {boat.readiness_label}
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className="text-right">
-                                <p className="text-3xl font-bold text-sea-blue">
-                                    {boat.readiness}%
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    prêt au départ
-                                </p>
-                            </div>
-                            <div className="h-16 w-16">
-                                <svg
-                                    viewBox="0 0 36 36"
-                                    className="size-full -rotate-90"
-                                >
-                                    <circle
-                                        cx="18"
-                                        cy="18"
-                                        r="15.5"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="3"
-                                        className="text-muted"
-                                    />
-                                    <circle
-                                        cx="18"
-                                        cy="18"
-                                        r="15.5"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="3"
-                                        strokeDasharray={`${boat.readiness} 100`}
-                                        className="text-sea-blue"
-                                    />
-                                </svg>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <DimCard
-                        icon={Ruler}
-                        label="Longueur"
-                        value={`${boat.length} m`}
-                    />
-                    <DimCard
-                        icon={Ship}
-                        label="Largeur"
-                        value={`${boat.width} m`}
-                    />
-                    <DimCard
-                        icon={Anchor}
-                        label="Tirant d'eau"
-                        value={`${boat.draft} m`}
-                        highlight
-                    />
-                    <DimCard
-                        icon={Gauge}
-                        label="Hauteur mât"
-                        value={`${boat.mast_height} m`}
-                    />
-                </div>
-
-                <div className="grid gap-4 lg:grid-cols-2">
-                    <Card className="border-border/60">
-                        <CardHeader>
-                            <CardTitle className="text-base">
-                                Navigation
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-2 text-sm">
-                            <Row
-                                label="Vitesse moyenne"
-                                value={`${boat.avg_speed} nds`}
+                <div className="grid flex-1 gap-px bg-border lg:grid-cols-[340px_minmax(0,1fr)_380px]">
+                    {/* Caractéristiques */}
+                    <section className="bg-background px-5 py-4">
+                        <h2 className="pw-title">Caractéristiques</h2>
+                        <div className="mt-3 grid grid-cols-2 gap-px border border-border bg-border">
+                            <Tile
+                                label="Longueur"
+                                value={boat.length}
+                                unit="m"
                             />
-                            <Row
-                                label="Autonomie carburant"
-                                value={`${boat.fuel_range} M`}
+                            <Tile label="Largeur" value={boat.width} unit="m" />
+                            <Tile
+                                label="Tirant d’eau"
+                                value={boat.draft}
+                                unit="m"
+                                accent
                             />
-                            <Row label="MMSI" value={boat.mmsi} />
-                            <Row label="Pavillon" value={boat.flag} />
-                        </CardContent>
-                    </Card>
+                            <Tile
+                                label="Tirant d’air"
+                                value={boat.mast_height}
+                                unit="m"
+                            />
+                            <Tile
+                                label="Vitesse moy."
+                                value={boat.avg_speed}
+                                unit="nds"
+                            />
+                            <Tile
+                                label="Autonomie"
+                                value={boat.fuel_range}
+                                unit="M"
+                            />
+                        </div>
+                        <BoatProfile boat={boat} />
+                    </section>
 
-                    <Card className="border-border/60">
-                        <CardHeader>
-                            <CardTitle className="text-base">
-                                Équipements sécurité ({equipmentPresent}/
-                                {boat.equipment.length})
-                            </CardTitle>
-                            <p className="text-xs text-muted-foreground">
-                                Cochez ce qui est à bord : l&apos;audit sécurité
-                                se met à jour aussitôt.
-                            </p>
-                        </CardHeader>
-                        <CardContent className="grid gap-2 sm:grid-cols-2">
+                    {/* Audit et règles */}
+                    <section className="flex flex-col bg-background px-5 py-4">
+                        <div className="flex items-baseline justify-between">
+                            <h2 className="pw-title">Audit sécurité</h2>
+                            <span className="pw-label">
+                                {equipmentPresent}/{boat.equipment.length}{' '}
+                                équipements
+                            </span>
+                        </div>
+                        <div className="mt-3 flex items-center gap-3">
+                            <span className="pw-figure text-[32px] leading-none">
+                                {boat.readiness}%
+                            </span>
+                            <SegmentBar
+                                value={boat.readiness}
+                                className="h-3.5"
+                            />
+                        </div>
+                        <p className="mt-2 text-lg font-semibold">
+                            {boat.readiness_label}
+                        </p>
+
+                        <div className="mt-6 border-t border-border pt-4">
+                            <h3 className="pw-title">
+                                Ce que ça change pour vos itinéraires
+                            </h3>
+                            <ul className="mt-2 divide-y divide-dashed divide-border">
+                                <li className="py-3">
+                                    <div className="flex items-baseline justify-between gap-3">
+                                        <span className="font-semibold">
+                                            Fonds trop faibles écartés
+                                        </span>
+                                        <Chip accent>
+                                            TE {nf.format(boat.draft)} m
+                                        </Chip>
+                                    </div>
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        Les mouillages et ports de moins de 2,5
+                                        m de profondeur sont filtrés ou
+                                        signalés.
+                                    </p>
+                                </li>
+                                <li className="py-3">
+                                    <div className="flex items-baseline justify-between gap-3">
+                                        <span className="font-semibold">
+                                            Durées d’étape
+                                        </span>
+                                        <Chip>
+                                            {nf.format(boat.avg_speed)} nds
+                                        </Chip>
+                                    </div>
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        Les temps de navigation sont estimés à
+                                        partir de votre vitesse moyenne.
+                                    </p>
+                                </li>
+                            </ul>
+                        </div>
+                    </section>
+
+                    {/* Équipements */}
+                    <section className="flex flex-col bg-background px-5 py-4">
+                        <h2 className="pw-title">Équipements à bord</h2>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Cochez ce qui est à bord : l’audit se met à jour
+                            aussitôt.
+                        </p>
+                        <ul className="mt-2 divide-y divide-dashed divide-border">
                             {boat.equipment.map((item) => (
-                                <button
-                                    key={item.key}
-                                    type="button"
-                                    onClick={() =>
-                                        toggleEquipment(item.key, item.present)
-                                    }
-                                    disabled={pending !== null}
-                                    aria-pressed={item.present}
-                                    className={cn(
-                                        'flex items-center gap-2 rounded-lg border border-transparent px-2 py-1.5 text-left text-sm transition',
-                                        'hover:border-border focus-visible:outline-2 focus-visible:outline-sea-blue',
-                                        !item.present && 'bg-safety-orange/10',
-                                        pending === item.key && 'opacity-50',
-                                    )}
-                                >
-                                    {item.present ? (
-                                        <CheckCircle2 className="size-4 shrink-0 text-green-600" />
-                                    ) : (
-                                        <Circle className="size-4 shrink-0 text-safety-orange" />
-                                    )}
-                                    <span
-                                        className={
-                                            !item.present
-                                                ? 'font-medium'
-                                                : 'text-muted-foreground'
+                                <li key={item.key}>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            toggleEquipment(
+                                                item.key,
+                                                item.present,
+                                            )
                                         }
+                                        disabled={pending !== null}
+                                        aria-pressed={item.present}
+                                        className={cn(
+                                            'flex w-full items-center gap-3 py-2 text-left transition hover:text-primary',
+                                            pending === item.key &&
+                                                'opacity-50',
+                                        )}
                                     >
-                                        {item.label}
-                                    </span>
-                                </button>
+                                        <span
+                                            className={cn(
+                                                'flex size-4 shrink-0 items-center justify-center rounded-[2px] border',
+                                                item.present
+                                                    ? 'border-good bg-good text-background'
+                                                    : 'border-line-strong',
+                                            )}
+                                        >
+                                            {item.present && (
+                                                <Check className="size-3" />
+                                            )}
+                                        </span>
+                                        <span className="flex-1">
+                                            {item.label}
+                                        </span>
+                                        <Status
+                                            tone={
+                                                item.present ? 'good' : 'warn'
+                                            }
+                                        >
+                                            {item.present ? 'OK' : 'Manquant'}
+                                        </Status>
+                                    </button>
+                                </li>
                             ))}
-                        </CardContent>
-                    </Card>
-                </div>
+                        </ul>
 
-                <Card className="border-lagoon/30 bg-lagoon/5 dark:bg-lagoon/5">
-                    <CardContent className="pt-6 text-sm">
-                        <p className="font-medium">
-                            Impact sur les recommandations
-                        </p>
-                        <p className="mt-1 text-muted-foreground">
-                            Avec un tirant d&apos;eau de{' '}
-                            <strong>{boat.draft} m</strong>, MariWaze adapte
-                            automatiquement les mouillages et ports suggérés.
-                            Les spots de moins de 2,5 m de profondeur sont
-                            filtrés ou signalés.
-                        </p>
-                    </CardContent>
-                </Card>
+                        <div
+                            className={cn(
+                                'mt-5 rounded-sm border px-4 py-3',
+                                hasMmsi ? 'border-border' : 'border-bad',
+                            )}
+                        >
+                            <div className="flex items-center justify-between">
+                                <span className="pw-title">MMSI</span>
+                                {hasMmsi ? (
+                                    <span className="pw-figure">
+                                        {boat.mmsi}
+                                    </span>
+                                ) : (
+                                    <Status tone="bad">Manquant</Status>
+                                )}
+                            </div>
+                            {!hasMmsi && (
+                                <>
+                                    <p className="mt-2 flex gap-2 text-sm text-muted-foreground">
+                                        <AlertTriangle className="mt-0.5 size-4 shrink-0 text-bad" />
+                                        Sans MMSI, l’appel de détresse ASN de la
+                                        VHF et l’AIS n’identifient pas{' '}
+                                        {boat.name}.
+                                    </p>
+                                    <Button asChild size="sm" className="mt-3">
+                                        <Link href={routes.boatSetup}>
+                                            Renseigner le MMSI
+                                        </Link>
+                                    </Button>
+                                </>
+                            )}
+                        </div>
+                    </section>
+                </div>
             </div>
         </>
     );
 }
 
-function DimCard({
-    icon: Icon,
+function Tile({
     label,
     value,
-    highlight,
+    unit,
+    accent = false,
 }: {
-    icon: typeof Ruler;
     label: string;
-    value: string;
-    highlight?: boolean;
+    value: number;
+    unit: string;
+    accent?: boolean;
 }) {
     return (
-        <Card
-            className={cn(
-                'border-border/60',
-                highlight && 'ring-1 ring-sea-blue/30',
-            )}
-        >
-            <CardContent className="flex items-center gap-3 pt-6">
-                <div className="flex size-10 items-center justify-center rounded-xl bg-muted text-sea-blue">
-                    <Icon className="size-5" />
-                </div>
-                <div>
-                    <p className="text-xs text-muted-foreground">{label}</p>
-                    <p className="text-lg font-bold">{value}</p>
-                </div>
-            </CardContent>
-        </Card>
+        <div className="bg-raised px-3.5 py-3">
+            <p className={cn('pw-label', accent && '!text-primary')}>{label}</p>
+            <p className="pw-figure text-2xl leading-7">
+                {nf.format(value)}
+                <small className="ml-1 text-xs text-muted-foreground">
+                    {unit}
+                </small>
+            </p>
+        </div>
     );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+/** Profil coté, schématique : seules les cotes viennent des données. */
+function BoatProfile({ boat }: { boat: Boat }) {
     return (
-        <div className="flex justify-between">
-            <span className="text-muted-foreground">{label}</span>
-            <span className="font-medium">{value}</span>
-        </div>
+        <figure className="mt-4 overflow-hidden rounded-sm border border-border bg-[var(--chart-water-1)]">
+            <svg
+                viewBox="0 0 290 170"
+                className="block h-auto w-full"
+                role="img"
+                aria-label={`Profil : ${nf.format(boat.length)} m de long, ${nf.format(boat.mast_height)} m de tirant d’air, ${nf.format(boat.draft)} m de tirant d’eau`}
+            >
+                <rect
+                    x="0"
+                    y="122"
+                    width="290"
+                    height="48"
+                    fill="var(--chart-water-3)"
+                />
+                <path
+                    d="M140 18 V112 M140 18 L214 112 M138 100 L84 100"
+                    fill="none"
+                    stroke="var(--muted-foreground)"
+                    strokeWidth="1"
+                />
+                <path
+                    d="M70 112 L222 112 L216 120 L212 132 L92 132 Q80 128 76 120 Z"
+                    fill="var(--chart-land-1)"
+                    stroke="var(--line-strong)"
+                />
+                <g fill="none" stroke="var(--primary)" strokeWidth="0.8">
+                    <path d="M250 18 V122 M246 18 H254 M246 122 H254" />
+                    <path d="M40 122 V132 M36 122 H44 M36 132 H44" />
+                    <path d="M70 150 H222 M70 146 V154 M222 146 V154" />
+                </g>
+                <g
+                    fill="var(--primary)"
+                    fontFamily="var(--font-mono)"
+                    fontSize="10"
+                >
+                    <text x="232" y="74" transform="rotate(-90 232 74)">
+                        {nf.format(boat.mast_height)} m
+                    </text>
+                    <text x="8" y="131">
+                        {nf.format(boat.draft)}
+                    </text>
+                    <text x="128" y="165">
+                        {nf.format(boat.length)} m
+                    </text>
+                </g>
+            </svg>
+        </figure>
     );
 }
 
