@@ -73,6 +73,16 @@ function themeColor(name: string, fallback: string): string {
     return value || fallback;
 }
 
+export type FitPadding = {
+    paddingTopLeft: [number, number];
+    paddingBottomRight: [number, number];
+};
+
+const DEFAULT_FIT_PADDING: FitPadding = {
+    paddingTopLeft: [40, 40],
+    paddingBottomRight: [40, 40],
+};
+
 let leafletPromise: Promise<typeof Leaflet> | null = null;
 const EMPTY_HAZARDS: HazardAlert[] = [];
 
@@ -172,6 +182,8 @@ export default function PlannerMap({
     routeAvailable = true,
     hazards = EMPTY_HAZARDS,
     preserveViewport = false,
+    zoomPosition = 'topleft',
+    fitPadding = DEFAULT_FIT_PADDING,
 }: {
     points: NavigationPoint[];
     onMapClick: (point: NavigationPoint) => void;
@@ -181,6 +193,10 @@ export default function PlannerMap({
     routeAvailable?: boolean;
     hazards?: HazardAlert[];
     preserveViewport?: boolean;
+    /** Coin du contrôle de zoom (Au large le place à droite, hors des panneaux). */
+    zoomPosition?: 'topleft' | 'topright' | 'bottomleft' | 'bottomright';
+    /** Marges de cadrage en pixels, pour ne pas cacher le tracé sous les panneaux. */
+    fitPadding?: FitPadding;
 }) {
     const element = useRef<HTMLDivElement>(null);
     const viewport = useRef<{ center: Leaflet.LatLng; zoom: number } | null>(
@@ -210,12 +226,13 @@ export default function PlannerMap({
                 map = L.map(container, {
                     zoomAnimation: false,
                     fadeAnimation: false,
-                    zoomControl: true,
+                    zoomControl: false,
                     attributionControl: true,
                     center: [20, 0],
                     zoom: 2,
                     worldCopyJump: true,
                 });
+                L.control.zoom({ position: zoomPosition }).addTo(map);
                 L.tileLayer(
                     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                     {
@@ -285,14 +302,14 @@ export default function PlannerMap({
                     }).addTo(map);
 
                     if (!preserveViewport || !viewport.current) {
-                        map.fitBounds(path, { padding: [40, 40] });
+                        map.fitBounds(path, fitPadding);
                     }
                 } else if (
                     points.length > 1 &&
                     (!preserveViewport || !viewport.current)
                 ) {
                     map.fitBounds(unwrapPath(points), {
-                        padding: [40, 40],
+                        ...fitPadding,
                         animate: false,
                     });
                 } else if (
@@ -422,6 +439,8 @@ export default function PlannerMap({
         routeAvailable,
         hazards,
         preserveViewport,
+        zoomPosition,
+        fitPadding,
         // Redessine le tracé avec les couleurs du design et du mode choisis.
         design,
         resolvedAppearance,

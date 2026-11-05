@@ -10,6 +10,7 @@ import {
     Status,
 } from '@/components/mariwaze/passerelle';
 import { Button } from '@/components/ui/button';
+import { useDesign } from '@/hooks/use-design';
 import { useMariwazeRoutes } from '@/hooks/use-mariwaze-routes';
 import { appRoutes } from '@/lib/mariwaze-routes';
 import { cn } from '@/lib/utils';
@@ -52,6 +53,19 @@ export default function DemoBoatShow({ boat }: Props) {
             { preserveScroll: true, onFinish: () => setPending(null) },
         );
     };
+
+    const { design } = useDesign();
+
+    if (design === 'large') {
+        return (
+            <BoatLarge
+                boat={boat}
+                pending={pending}
+                hasMmsi={hasMmsi}
+                onToggle={toggleEquipment}
+            />
+        );
+    }
 
     return (
         <>
@@ -332,6 +346,308 @@ function BoatProfile({ boat }: { boat: Boat }) {
                 </g>
             </svg>
         </figure>
+    );
+}
+
+/* ------------------------------------------------------------------
+ * Design « Au large » : grande carte illustrée du bateau,
+ * équipement et identité radio dans la colonne de droite.
+ * ------------------------------------------------------------------ */
+
+function BoatLarge({
+    boat,
+    pending,
+    hasMmsi,
+    onToggle,
+}: {
+    boat: Boat;
+    pending: string | null;
+    hasMmsi: boolean;
+    onToggle: (key: string, present: boolean) => void;
+}) {
+    const routes = useMariwazeRoutes();
+    const present = boat.equipment.filter((item) => item.present).length;
+    const specs: [string, string][] = [
+        [`${nf.format(boat.length)} m`, 'longueur'],
+        [`${nf.format(boat.width)} m`, 'largeur'],
+        [`${nf.format(boat.draft)} m`, 'tirant d’eau'],
+        [`${nf.format(boat.mast_height)} m`, 'tirant d’air'],
+        [`${nf.format(boat.avg_speed)} nds`, 'vitesse moyenne'],
+        [`${nf.format(boat.fuel_range)} M`, 'autonomie'],
+    ];
+
+    return (
+        <>
+            <Head title={`Bateau — ${boat.name}`} />
+            <div className="grid gap-5 pt-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+                <section className="overflow-hidden rounded-[24px] bg-card shadow-[var(--soft-shadow)]">
+                    <div className="relative h-[300px] bg-[var(--chart-water-1)]">
+                        <BoatSilhouette boat={boat} />
+                        <div className="absolute top-6 left-7">
+                            <h1 className="text-[34px] leading-10 font-semibold tracking-[-0.02em]">
+                                {boat.name}
+                            </h1>
+                            <p className="text-[15px] text-muted-foreground">
+                                {boat.type_label} · pavillon {boat.flag}
+                            </p>
+                        </div>
+                        <Button
+                            asChild
+                            variant="secondary"
+                            className="absolute top-5 right-5 bg-card"
+                        >
+                            <Link href={routes.boatSetup}>
+                                <Pencil className="size-4" />
+                                Modifier
+                            </Link>
+                        </Button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2.5 p-5 sm:grid-cols-3 lg:grid-cols-6">
+                        {specs.map(([value, label]) => (
+                            <div
+                                key={label}
+                                className="rounded-2xl bg-background px-3.5 py-3"
+                            >
+                                <p className="text-[22px] leading-7 font-light tracking-[-0.02em] tabular-nums">
+                                    {value}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    {label}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="grid gap-2.5 px-5 pb-5 md:grid-cols-2">
+                        <div className="rounded-2xl border border-border px-4 py-3.5">
+                            <p className="font-semibold">
+                                Fonds trop faibles écartés
+                            </p>
+                            <p className="mt-0.5 text-sm text-muted-foreground">
+                                Avec {nf.format(boat.draft)} m de tirant d’eau,
+                                les ports et mouillages de moins de 2,5 m sont
+                                filtrés ou signalés.
+                            </p>
+                        </div>
+                        <div className="rounded-2xl border border-border px-4 py-3.5">
+                            <p className="font-semibold">Durées d’étape</p>
+                            <p className="mt-0.5 text-sm text-muted-foreground">
+                                Les temps de navigation sont estimés à partir de
+                                vos {nf.format(boat.avg_speed)} nœuds de
+                                moyenne.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <div className="flex flex-col gap-5">
+                    <section className="rounded-[24px] bg-card p-6 shadow-[var(--soft-shadow)]">
+                        <div className="flex items-center gap-4">
+                            <ReadinessDial value={boat.readiness} />
+                            <div>
+                                <h2 className="font-semibold">
+                                    Équipement de sécurité
+                                </h2>
+                                <p className="text-sm text-muted-foreground">
+                                    {present} sur {boat.equipment.length} à bord
+                                    · {boat.readiness_label}
+                                </p>
+                            </div>
+                        </div>
+                        <ul className="mt-4">
+                            {boat.equipment.map((item) => (
+                                <li key={item.key}>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            onToggle(item.key, item.present)
+                                        }
+                                        disabled={pending !== null}
+                                        aria-pressed={item.present}
+                                        className={cn(
+                                            'flex w-full items-center gap-3 border-b border-border py-2.5 text-left transition-colors last:border-b-0 hover:text-primary',
+                                            pending === item.key &&
+                                                'opacity-50',
+                                        )}
+                                    >
+                                        <span
+                                            className={cn(
+                                                'flex size-[22px] shrink-0 items-center justify-center rounded-full',
+                                                item.present
+                                                    ? 'bg-good-soft text-good'
+                                                    : 'bg-warn-soft text-warn',
+                                            )}
+                                        >
+                                            {item.present ? (
+                                                <Check className="size-3" />
+                                            ) : (
+                                                <span className="text-xs font-bold">
+                                                    !
+                                                </span>
+                                            )}
+                                        </span>
+                                        <span className="flex-1">
+                                            {item.label}
+                                        </span>
+                                        <span
+                                            className={cn(
+                                                'text-xs font-semibold',
+                                                item.present
+                                                    ? 'text-muted-foreground'
+                                                    : 'text-warn',
+                                            )}
+                                        >
+                                            {item.present
+                                                ? 'À bord'
+                                                : 'Manquant'}
+                                        </span>
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+
+                    <section
+                        className={cn(
+                            'rounded-[24px] p-6',
+                            hasMmsi
+                                ? 'bg-card shadow-[var(--soft-shadow)]'
+                                : 'bg-bad-soft',
+                        )}
+                    >
+                        <h2 className="font-semibold">
+                            {hasMmsi ? 'Identité radio' : 'Il manque le MMSI'}
+                        </h2>
+                        {hasMmsi ? (
+                            <p className="mt-1 text-[22px] font-light tabular-nums">
+                                {boat.mmsi}
+                            </p>
+                        ) : (
+                            <>
+                                <p className="mt-1 text-sm">
+                                    Sans lui, l’appel de détresse de la VHF et
+                                    l’AIS n’identifient pas {boat.name}.
+                                </p>
+                                <Button asChild className="mt-4">
+                                    <Link href={routes.boatSetup}>
+                                        Renseigner le MMSI
+                                    </Link>
+                                </Button>
+                            </>
+                        )}
+                    </section>
+                </div>
+            </div>
+        </>
+    );
+}
+
+function ReadinessDial({ value }: { value: number }) {
+    const circumference = 2 * Math.PI * 27;
+    const clamped = Math.max(0, Math.min(100, value));
+
+    return (
+        <svg
+            width="64"
+            height="64"
+            viewBox="0 0 64 64"
+            className="shrink-0"
+            role="img"
+            aria-label={`${clamped} % de l’équipement à bord`}
+        >
+            <circle
+                cx="32"
+                cy="32"
+                r="27"
+                fill="none"
+                stroke="var(--sunken)"
+                strokeWidth="7"
+            />
+            <circle
+                cx="32"
+                cy="32"
+                r="27"
+                fill="none"
+                stroke="var(--primary)"
+                strokeWidth="7"
+                strokeLinecap="round"
+                strokeDasharray={`${(clamped / 100) * circumference} ${circumference}`}
+                transform="rotate(-90 32 32)"
+            />
+            <text
+                x="32"
+                y="37"
+                textAnchor="middle"
+                fill="var(--foreground)"
+                fontSize="15"
+                fontWeight="600"
+            >
+                {clamped}%
+            </text>
+        </svg>
+    );
+}
+
+/** Silhouette schématique ; seules les cotes viennent de la fiche. */
+function BoatSilhouette({ boat }: { boat: Boat }) {
+    return (
+        <svg
+            viewBox="0 0 780 300"
+            preserveAspectRatio="xMaxYMid meet"
+            className="absolute inset-0 size-full"
+            role="img"
+            aria-label={`${boat.name} : ${nf.format(boat.length)} m de long, ${nf.format(boat.mast_height)} m de tirant d’air, ${nf.format(boat.draft)} m de tirant d’eau`}
+        >
+            <g
+                fill="none"
+                stroke="var(--chart-water-3)"
+                strokeWidth="2"
+                strokeLinecap="round"
+            >
+                <path d="M0 250 q20 -8 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0" />
+                <path
+                    d="M20 272 q20 -8 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0"
+                    opacity="0.6"
+                />
+            </g>
+            <g stroke="var(--deep)" strokeWidth="1.5" strokeLinejoin="round">
+                <path d="M486 46 L486 210 L392 210 Z" fill="var(--card)" />
+                <path
+                    d="M494 54 L494 214 L606 214 Z"
+                    fill="var(--chart-route-glow)"
+                />
+                <path
+                    d="M490 36 V228 M490 36 L620 230 M486 210 L384 210"
+                    fill="none"
+                    strokeLinecap="round"
+                />
+                <path
+                    d="M372 228 L640 228 L632 240 L626 254 L398 254 Q382 250 378 240 Z"
+                    fill="var(--card)"
+                />
+                <path
+                    d="M440 228 L440 214 L560 214 L572 228"
+                    fill="var(--card)"
+                />
+            </g>
+            <g fill="none" stroke="var(--primary)" strokeWidth="1.2">
+                <path d="M680 36 V246 M674 36 H686 M674 246 H686" />
+                <path d="M372 286 H640 M372 280 V292 M640 280 V292" />
+                <path d="M350 246 V258 M344 246 H356 M344 258 H356" />
+            </g>
+            <g fill="var(--primary)" fontSize="13" fontWeight="600">
+                <text x="694" y="146">
+                    {nf.format(boat.mast_height)} m
+                </text>
+                <text x="484" y="282">
+                    {nf.format(boat.length)} m
+                </text>
+                <text x="296" y="257">
+                    {nf.format(boat.draft)} m
+                </text>
+            </g>
+        </svg>
     );
 }
 
