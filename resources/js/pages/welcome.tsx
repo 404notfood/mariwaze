@@ -176,9 +176,9 @@ export default function Welcome() {
 
                 <section className="mariwaze-gradient-ocean">
                     <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-6 px-6 py-14 md:flex-row md:items-center">
-                        <p className="max-w-2xl text-2xl leading-8 font-semibold tracking-[0.02em] text-[#e6edf3] uppercase">
+                        <p className="max-w-2xl text-2xl leading-8 font-semibold tracking-[0.02em] text-[var(--hero-fg)] uppercase">
                             MariWaze prépare la croisière.{' '}
-                            <span className="text-[#8fa1b3]">
+                            <span className="text-[var(--hero-muted)]">
                                 La veille, la carte et les décisions restent à
                                 bord, avec vous.
                             </span>
@@ -187,7 +187,7 @@ export default function Welcome() {
                             <Button
                                 asChild
                                 size="lg"
-                                className="bg-[#4cc9f0] text-[#04141c] hover:bg-[#4cc9f0]/90"
+                                className="bg-[var(--hero-accent)] text-[var(--hero-accent-fg)] hover:bg-[var(--hero-accent)]/90"
                             >
                                 <Link href={register()}>
                                     Commencer gratuitement
@@ -197,10 +197,10 @@ export default function Welcome() {
                     </div>
                 </section>
 
-                <footer className="border-t border-[#1f2d3a] bg-[#070d13] py-6">
+                <footer className="border-t border-[var(--hero-line)] bg-[var(--hero-bg-deep)] py-6">
                     <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 md:flex-row">
                         <MariwazeLogo variant="light" />
-                        <p className="font-mono text-[11px] tracking-[0.08em] text-[#8fa1b3] uppercase">
+                        <p className="font-mono text-[11px] tracking-[0.08em] text-[var(--hero-muted)] uppercase">
                             © 2027 MariWaze — copilote de croisière
                         </p>
                     </div>

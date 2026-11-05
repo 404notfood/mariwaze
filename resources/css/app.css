@@ -314,14 +314,10 @@
 @layer utilities {
     /* Ex-dégradé : aplat sombre quadrillé comme un écran de traceur */
     .mariwaze-gradient-ocean {
-        background-color: #0a1118;
+        background-color: var(--hero-bg);
         background-image:
-            linear-gradient(rgba(76, 201, 240, 0.06) 1px, transparent 1px),
-            linear-gradient(
-                90deg,
-                rgba(76, 201, 240, 0.06) 1px,
-                transparent 1px
-            );
+            linear-gradient(var(--hero-grid) 1px, transparent 1px),
+            linear-gradient(90deg, var(--hero-grid) 1px, transparent 1px);
         background-size: 48px 48px;
     }
 
@@ -346,4 +342,241 @@
     .leaflet-container {
         font-family: var(--font-sans);
     }
+}
+
+/* Bandeaux sombres fixes (accueil, connexion, pied de page) */
+:root {
+    --hero-bg: #0a1118;
+    --hero-bg-deep: #070d13;
+    --hero-fg: #e6edf3;
+    --hero-muted: #8fa1b3;
+    --hero-accent: #4cc9f0;
+    --hero-accent-fg: #04141c;
+    --hero-line: #1f2d3a;
+    --hero-grid: rgba(76, 201, 240, 0.06);
+}
+
+/* ------------------------------------------------------------------
+ * Design « Au large » : même structure, autre caractère.
+ * Feuilles arrondies, ombres douces, une seule famille (Albert Sans),
+ * pas de capitales ; tons sable et brume, tracé corail.
+ * Activé par <html data-design="large">, compatible jour / nuit.
+ * ------------------------------------------------------------------ */
+:root[data-design='large'] {
+    --font-sans: 'Albert Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'Albert Sans', ui-sans-serif, system-ui, sans-serif;
+
+    --background: #eef3f1;
+    --foreground: #10302f;
+    --card: #ffffff;
+    --card-foreground: #10302f;
+    --popover: #ffffff;
+    --popover-foreground: #10302f;
+    --primary: #0f766e;
+    --primary-foreground: #ffffff;
+    --secondary: #e2ebe8;
+    --secondary-foreground: #10302f;
+    --muted: #e6eeeb;
+    --muted-foreground: #4d6664;
+    --accent: #d4ece8;
+    --accent-foreground: #10302f;
+    --destructive: #b4362a;
+    --destructive-foreground: #ffffff;
+    --border: #d3dfdc;
+    --input: #8fa8a4;
+    --ring: #0f766e;
+    --chart-1: #0f766e;
+    --chart-2: #c9432c;
+    --chart-3: #1f7a4d;
+    --chart-4: #10302f;
+    --chart-5: #946000;
+    --radius: 1rem;
+    --sidebar: #ffffff;
+    --sidebar-foreground: #10302f;
+    --sidebar-primary: #0f766e;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #d4ece8;
+    --sidebar-accent-foreground: #10302f;
+    --sidebar-border: #d3dfdc;
+    --sidebar-ring: #0f766e;
+
+    --raised: #ffffff;
+    --sunken: #e2ebe8;
+    --line-strong: #8fa8a4;
+    --deep: #10302f;
+    --lagoon: #0f766e;
+    --route: #c9432c;
+    --good: #1f7a4d;
+    --good-soft: #d6eedf;
+    --warn: #946000;
+    --warn-soft: #f8ebcc;
+    --bad: #b4362a;
+    --bad-soft: #f6dcd7;
+    --soft-shadow: 0 12px 32px -14px rgba(16, 48, 47, 0.3);
+
+    --chart-water-1: #cfe4e6;
+    --chart-water-2: #b5d6db;
+    --chart-water-3: #9cc6cd;
+    --chart-land-1: #f3ecdf;
+    --chart-land-2: #e8dcc6;
+    --chart-coastline: #8fa8a4;
+    --chart-grid: rgba(16, 48, 47, 0.05);
+    --chart-depth: rgba(15, 118, 110, 0.25);
+    --chart-depth-label: rgba(16, 48, 47, 0.55);
+    --chart-current: #0f766e;
+    --chart-current-strong: #0b5a54;
+    --chart-current-label: rgba(16, 48, 47, 0.72);
+    --chart-route: #c9432c;
+    --chart-route-glow: #f2c66d;
+    --chart-marker-port: #0f766e;
+    --chart-marker-port-stroke: #ffffff;
+    --chart-marker-anchorage: #1f7a4d;
+    --chart-marker-anchorage-stroke: #ffffff;
+    --chart-marker-waypoint: #c9432c;
+    --chart-marker-waypoint-stroke: #ffffff;
+    --chart-marker-danger: #b4362a;
+    --chart-marker-danger-stroke: #ffffff;
+    --chart-danger-zone: #b4362a;
+    --chart-label: #10302f;
+    --chart-compass-bg: #ffffff;
+    --chart-compass-north: #c9432c;
+    --chart-highlight: #0f766e;
+    --chart-legend-bg: rgba(255, 255, 255, 0.95);
+
+    --hero-bg: #10302f;
+    --hero-bg-deep: #0b2322;
+    --hero-fg: #eef3f1;
+    --hero-muted: #9dbab6;
+    --hero-accent: #f2c66d;
+    --hero-accent-fg: #10302f;
+    --hero-line: #1f4744;
+    --hero-grid: transparent;
+}
+
+:root[data-design='large'].dark {
+    --background: #0d1b1d;
+    --foreground: #e8f1ef;
+    --card: #13262a;
+    --card-foreground: #e8f1ef;
+    --popover: #13262a;
+    --popover-foreground: #e8f1ef;
+    --primary: #4fd1c5;
+    --primary-foreground: #062320;
+    --secondary: #1a3236;
+    --secondary-foreground: #e8f1ef;
+    --muted: #112326;
+    --muted-foreground: #9db5b1;
+    --accent: #173a3a;
+    --accent-foreground: #e8f1ef;
+    --destructive: #ff8a80;
+    --destructive-foreground: #2a0806;
+    --border: #1f3a3d;
+    --input: #3c5a5c;
+    --ring: #4fd1c5;
+    --chart-1: #4fd1c5;
+    --chart-2: #ff8a70;
+    --chart-3: #5fd3a0;
+    --chart-4: #e8f1ef;
+    --chart-5: #f2c66d;
+    --sidebar: #13262a;
+    --sidebar-foreground: #e8f1ef;
+    --sidebar-primary: #4fd1c5;
+    --sidebar-primary-foreground: #062320;
+    --sidebar-accent: #173a3a;
+    --sidebar-accent-foreground: #e8f1ef;
+    --sidebar-border: #1f3a3d;
+    --sidebar-ring: #4fd1c5;
+
+    --raised: #13262a;
+    --sunken: #0a1517;
+    --line-strong: #3c5a5c;
+    --deep: #0a1517;
+    --lagoon: #4fd1c5;
+    --route: #ff8a70;
+    --good: #5fd3a0;
+    --good-soft: #143326;
+    --warn: #f2c66d;
+    --warn-soft: #3a2f12;
+    --bad: #ff8a80;
+    --bad-soft: #3a1714;
+    --soft-shadow: 0 12px 32px -14px rgba(0, 0, 0, 0.6);
+
+    --chart-water-1: #0f2426;
+    --chart-water-2: #122c2f;
+    --chart-water-3: #163538;
+    --chart-land-1: #1c2e2c;
+    --chart-land-2: #182826;
+    --chart-coastline: #3c5a5c;
+    --chart-grid: rgba(79, 209, 197, 0.05);
+    --chart-route: #ff8a70;
+    --chart-marker-port: #4fd1c5;
+    --chart-marker-port-stroke: #0d1b1d;
+    --chart-marker-anchorage: #5fd3a0;
+    --chart-marker-anchorage-stroke: #0d1b1d;
+    --chart-label: #e8f1ef;
+    --chart-compass-bg: #13262a;
+    --chart-legend-bg: rgba(13, 27, 29, 0.92);
+
+    --hero-bg: #0a1517;
+    --hero-bg-deep: #071012;
+}
+
+/* Au large : pas de capitales ni de chasse fixe, des formes douces. */
+[data-design='large'] .uppercase,
+[data-design='large'] .pw-label,
+[data-design='large'] .pw-title,
+[data-design='large'] .pw-status,
+[data-design='large'] [data-slot='button'],
+[data-design='large'] [data-slot='badge'],
+[data-design='large'] [data-slot='card-title'] {
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+[data-design='large'] .pw-label {
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 500;
+}
+
+[data-design='large'] .pw-title {
+    font-size: 16px;
+    line-height: 22px;
+}
+
+[data-design='large'] .pw-status {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+[data-design='large'] .pw-figure {
+    font-weight: 400;
+    letter-spacing: -0.01em;
+}
+
+[data-design='large'] h1,
+[data-design='large'] h2 {
+    letter-spacing: -0.02em;
+}
+
+[data-design='large'] [data-slot='button'],
+[data-design='large'] [data-slot='badge'] {
+    border-radius: 999px;
+}
+
+[data-design='large'] [data-slot='card'],
+[data-design='large'] .pw-panel {
+    border-color: transparent;
+    box-shadow: var(--soft-shadow);
+}
+
+[data-design='large'] [data-sidebar='menu-button'][data-active='true'] {
+    box-shadow: none;
+    border-radius: 999px;
+    background: var(--sidebar-accent);
+}
+
+/* Fond OpenStreetMap adouci en jour, comme une carte délavée */
+html[data-design='large']:not(.dark) .leaflet-tile-pane {
+    filter: saturate(0.55) brightness(1.04) sepia(0.08);
 }

@@ -1,5 +1,7 @@
 import type * as Leaflet from 'leaflet';
 import { useEffect, useEffectEvent, useRef } from 'react';
+import { useAppearance } from '@/hooks/use-appearance';
+import { useDesign } from '@/hooks/use-design';
 import { normalizeLongitude, unwrapPath } from '@/lib/geo';
 
 import 'leaflet/dist/leaflet.css';
@@ -185,6 +187,8 @@ export default function PlannerMap({
         null,
     );
     const handleMapClick = useEffectEvent(onMapClick);
+    const { design } = useDesign();
+    const { resolvedAppearance } = useAppearance();
 
     useEffect(() => {
         const container = element.current;
@@ -418,6 +422,9 @@ export default function PlannerMap({
         routeAvailable,
         hazards,
         preserveViewport,
+        // Redessine le tracé avec les couleurs du design et du mode choisis.
+        design,
+        resolvedAppearance,
     ]);
 
     return (

@@ -24,7 +24,7 @@ export default function MariwazeLogo({
                 className={cn(
                     'flex size-9 items-center justify-center rounded-sm border-[1.5px]',
                     onDark
-                        ? 'border-[#4cc9f0] text-[#4cc9f0]'
+                        ? 'border-[var(--hero-accent)] text-[var(--hero-accent)]'
                         : 'border-primary text-primary',
                 )}
             >
@@ -34,7 +34,7 @@ export default function MariwazeLogo({
                 <span
                     className={cn(
                         'truncate text-lg font-bold tracking-[0.08em] uppercase',
-                        onDark ? 'text-[#e6edf3]' : 'text-foreground',
+                        onDark ? 'text-[var(--hero-fg)]' : 'text-foreground',
                     )}
                 >
                     MariWaze
@@ -43,7 +43,7 @@ export default function MariwazeLogo({
                     <span
                         className={cn(
                             'pw-label truncate',
-                            onDark && '!text-[#8fa1b3]',
+                            onDark && '!text-[var(--hero-muted)]',
                         )}
                     >
                         Copilote de croisière
